@@ -1,0 +1,68 @@
+name: gestion_commandes
+description: Application de gestion de commandes pour vendeurs et clients
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Icons
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+  fluttertoast: ^8.2.4
+
+  # State Management
+  provider: ^6.1.1
+
+  # Database & Stockage Local
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  shared_preferences: ^2.2.2
+  path_provider: ^2.1.1  # <--- AJOUTÉ : Pour trouver le dossier où stocker les images
+
+  # Connectivité & Réseau
+  connectivity_plus: ^5.0.2
+  http: ^1.1.2
+  url_launcher: ^6.2.4
+
+  # Médias & Fichiers
+  image_picker: ^1.0.4   # <--- AJOUTÉ : Pour ouvrir la Caméra / Galerie
+  mobile_scanner: ^3.5.5
+
+  # Utils & Stats
+  intl: ^0.19.0
+  uuid: ^4.3.3
+  fl_chart: ^0.66.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  flutter_native_splash: ^2.3.10
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+# Configuration du Splash Screen
+flutter_native_splash:
+  color: "#F5F7FA"
+  image: assets/images/logo.png
+  android: true
+  android_12:
+    image: assets/images/logo.png
+    color: "#F5F7FA"
+  ios: true
+
+# Configuration de l'icône
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
