@@ -4,6 +4,9 @@ import '../models/client_stats_model.dart';
 import '../models/message_model.dart';
 import '../models/order_model.dart';
 import '../models/user_model.dart';
+import '../models/vendor_info_mode.dart';
+import '../models/product_with_vendor_model.dart';
+import '../models/product_model.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -33,12 +36,11 @@ class DatabaseHelper {
       email TEXT,
       password TEXT NOT NULL,
       role TEXT NOT NULL,
-      shopName TEXT
+      shopName TEXT,
+      city TEXT,
+      district TEXT
     )
     ''';
-
-    // Dans DatabaseHelper._createDB...
-    // ... après la table users
 
     const productTable = '''
     CREATE TABLE products (
@@ -48,20 +50,18 @@ class DatabaseHelper {
       category TEXT NOT NULL,
       price REAL NOT NULL,
       description TEXT,
-      imagePath TEXT,
+      images TEXT,
       stockQuantity INTEGER DEFAULT 0,
       FOREIGN KEY (vendorId) REFERENCES users (id)
     )
     ''';
-
-    // ... après la table products
 
     const orderTable = '''
     CREATE TABLE orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       clientId INTEGER NOT NULL,
       totalAmount REAL NOT NULL,
-      status TEXT DEFAULT 'En attente', -- En attente, Validée, Rejetée, Livrée
+      status TEXT DEFAULT 'En attente',
       date TEXT NOT NULL,
       FOREIGN KEY (clientId) REFERENCES users (id)
     )
@@ -80,7 +80,6 @@ class DatabaseHelper {
     )
     ''';
 
-    // Dans _createDB...
     const messageTable = '''
     CREATE TABLE messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,153 +91,50 @@ class DatabaseHelper {
     )
     ''';
 
-    await db.execute(messageTable);
+    const categoryTable = '''
+    CREATE TABLE categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      isDefault INTEGER DEFAULT 0
+    )
+    ''';
 
+    // Créer toutes les tables
+    await db.execute(userTable);
+    await db.execute(productTable);
     await db.execute(orderTable);
     await db.execute(orderItemsTable);
+    await db.execute(messageTable);
+    await db.execute(categoryTable);
 
-    await db.execute(productTable);
-
-    await db.execute(userTable);
-    // On ajoutera les tables Products et Orders ici plus tard
+    // Initialiser les catégories par défaut
+    await _initDefaultCategories(db);
   }
 
+  Future<void> _initDefaultCategories(Database db) async {
+    final defaultCategories = [
+      'Nourriture',
+      'Boisson',
+      'Vêtements',
+      'Électronique',
+      'Autre',
+    ];
+
+    for (var cat in defaultCategories) {
+      await db.insert(
+        'categories',
+        {'name': cat, 'isDefault': 1},
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
+  }
+
+  // ============================================
+  // GESTION DES UTILISATEURS
+  // ============================================
   Future<int> createUser(UserModel user) async {
     final db = await instance.database;
     return await db.insert('users', user.toMap());
-  }
-
-  // Dans DatabaseHelper...
-  Future<List<MessageModel>> getMessages(int userId, int otherId) async {
-    final db = await instance.database;
-    final result = await db.query(
-        'messages',
-        where: '(senderId = ? AND receiverId = ?) OR (senderId = ? AND receiverId = ?)',
-        whereArgs: [userId, otherId, otherId, userId],
-        orderBy: 'date ASC' // Chronologique
-    );
-    return result.map((e) => MessageModel.fromMap(e)).toList();
-  }
-
-  Future<void> insertMessage(MessageModel message) async {
-    final db = await instance.database;
-    await db.insert('messages', message.toMap());
-  }
-
-  // Dans DatabaseHelper
-
-// Dans DatabaseHelper...
-
-  Future<void> createOrder(int clientId, double total, List<Map<String, dynamic>> items) async {
-    final db = await instance.database;
-
-    // On utilise une "Transaction" pour que tout se fasse en même temps
-    // (Sécurité : si ça plante au milieu, ça annule tout)
-    await db.transaction((txn) async {
-
-      // 1. Créer la commande
-      final orderId = await txn.insert('orders', {
-        'clientId': clientId,
-        'totalAmount': total,
-        'status': 'En attente',
-        'date': DateTime.now().toIso8601String(),
-        'isSynced': 0, // Pour la synchro future
-      });
-
-      // 2. Traiter chaque article
-      for (var item in items) {
-        // A. Ajouter la ligne de commande
-        await txn.insert('order_items', {
-          'orderId': orderId,
-          'productId': item['productId'],
-          'productName': item['productName'],
-          'quantity': item['quantity'],
-          'price': item['price'],
-        });
-
-        // B. --- LA GESTION DE STOCK AUTOMATIQUE EST ICI ---
-        // On décrémente (soustrait) la quantité du stock du produit
-        await txn.rawUpdate(
-            'UPDATE products SET stockQuantity = stockQuantity - ? WHERE id = ?',
-            [item['quantity'], item['productId']]
-        );
-      }
-    });
-  }
-
-  // Récupérer les commandes d'un vendeur spécifique
-  Future<List<OrderModel>> getVendorOrders(int vendorId) async {
-    final db = await instance.database;
-
-    // 1. Trouver les IDs des commandes qui contiennent des produits de ce vendeur
-    final List<Map<String, dynamic>> orderIdsMap = await db.rawQuery('''
-      SELECT DISTINCT o.id 
-      FROM orders o
-      JOIN order_items oi ON o.id = oi.orderId
-      JOIN products p ON oi.productId = p.id
-      WHERE p.vendorId = ?
-      ORDER BY o.date DESC
-    ''', [vendorId]);
-
-    List<OrderModel> orders = [];
-
-    for (var map in orderIdsMap) {
-      int orderId = map['id'];
-
-      // 2. Pour chaque commande, récupérer les infos générales + Nom Client
-      final orderInfo = await db.rawQuery('''
-        SELECT o.*, u.fullName as clientName
-        FROM orders o
-        JOIN users u ON o.clientId = u.id
-        WHERE o.id = ?
-      ''', [orderId]);
-
-      if (orderInfo.isNotEmpty) {
-        // 3. Récupérer les items de cette commande
-        final itemsMap = await db.query('order_items', where: 'orderId = ?', whereArgs: [orderId]);
-        final items = itemsMap.map((e) => OrderItem.fromMap(e)).toList();
-
-        orders.add(OrderModel.fromMap(orderInfo.first, items));
-      }
-    }
-    return orders;
-  }
-
-  // Dans DatabaseHelper...
-
-  Future<List<ClientStatsModel>> getVendorClients(int vendorId) async {
-    final db = await instance.database;
-
-    // Cette requête est magique : elle joint les tables pour trouver
-    // QUI a acheté QUOI appartenant à ce VENDEUR
-    final result = await db.rawQuery('''
-      SELECT 
-        u.id, 
-        u.fullName, 
-        u.phone, 
-        COUNT(DISTINCT o.id) as orderCount, 
-        SUM(oi.price * oi.quantity) as totalSpent
-      FROM users u
-      JOIN orders o ON u.id = o.clientId
-      JOIN order_items oi ON o.id = oi.orderId
-      JOIN products p ON oi.productId = p.id
-      WHERE p.vendorId = ?
-      GROUP BY u.id
-      ORDER BY totalSpent DESC
-    ''', [vendorId]);
-
-    return result.map((e) => ClientStatsModel.fromMap(e)).toList();
-  }
-
-  // Changer le statut
-  Future<int> updateOrderStatus(int orderId, String newStatus) async {
-    final db = await instance.database;
-    return await db.update(
-      'orders',
-      {'status': newStatus},
-      where: 'id = ?',
-      whereArgs: [orderId],
-    );
   }
 
   Future<UserModel?> loginUser(String phone, String password) async {
@@ -255,5 +151,287 @@ class DatabaseHelper {
       return null;
     }
   }
-}
 
+  Future<VendorInfoModel?> getVendorInfo(int vendorId) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'users',
+      where: 'id = ? AND role = ?',
+      whereArgs: [vendorId, 'vendeur'],
+    );
+
+    if (result.isEmpty) return null;
+    return VendorInfoModel.fromMap(result.first);
+  }
+
+  // ============================================
+  // GESTION DES CATÉGORIES
+  // ============================================
+  Future<List<String>> getAllCategories() async {
+    final db = await instance.database;
+    final result = await db.query(
+      'categories',
+      orderBy: 'isDefault DESC, name ASC',
+    );
+    return result.map((e) => e['name'] as String).toList();
+  }
+
+  Future<void> addCategory(String categoryName) async {
+    final db = await instance.database;
+
+    try {
+      await db.insert(
+        'categories',
+        {
+          'name': categoryName,
+          'isDefault': 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
+    } catch (e) {
+      print("Catégorie existe déjà: $categoryName");
+    }
+  }
+
+  Future<bool> categoryExists(String categoryName) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'categories',
+      where: 'LOWER(name) = LOWER(?)',
+      whereArgs: [categoryName],
+    );
+    return result.isNotEmpty;
+  }
+
+  // ============================================
+  // GESTION DES PRODUITS
+  // ============================================
+  Future<List<ProductWithVendorModel>> getAllProductsWithVendor() async {
+    final db = await database;
+
+    print('🔍 Exécution de la requête SQL getAllProductsWithVendor...');
+
+    final result = await db.rawQuery('''
+    SELECT 
+      p.id,
+      p.name,
+      p.category,
+      p.price,
+      p.stockQuantity,
+      p.description,
+      p.images,
+      p.vendorId,
+      u.id as vendor_id,
+      u.fullName as vendor_name,
+      u.shopName as vendor_shop_name,
+      u.phone as vendor_phone,
+      u.city as vendor_city,
+      u.district as vendor_district
+    FROM products p
+    INNER JOIN users u ON p.vendorId = u.id
+    WHERE u.role = 'vendor'
+    ORDER BY p.id DESC
+  ''');
+
+    print('📊 Requête SQL retournée: ${result.length} lignes');
+
+    if (result.isEmpty) {
+      print('⚠️ AUCUN PRODUIT DANS LA BASE DE DONNÉES');
+
+      // Vérification des tables
+      final productsCount = await db.rawQuery('SELECT COUNT(*) as count FROM products');
+      final vendorsCount = await db.rawQuery("SELECT COUNT(*) as count FROM users WHERE role = 'vendor'");
+
+      print('📦 Produits dans la table: ${productsCount.first['count']}');
+      print('👤 Vendeurs dans la table: ${vendorsCount.first['count']}');
+
+      return [];
+    }
+
+    return result.map((map) {
+      // Extraire les infos produit
+      final productMap = {
+        'id': map['id'],
+        'name': map['name'],
+        'category': map['category'],
+        'price': map['price'],
+        'stockQuantity': map['stockQuantity'],
+        'description': map['description'],
+        'images': map['images'],
+        'vendorId': map['vendorId'],
+      };
+
+      // Extraire les infos vendeur
+      final vendorMap = {
+        'id': map['vendor_id'],
+        'name': map['vendor_name'],
+        'shopName': map['vendor_shop_name'],
+        'phone': map['vendor_phone'],
+        'city': map['vendor_city'],
+        'district': map['vendor_district'],
+      };
+
+      print('✅ Produit: ${map['name']} | Vendeur: ${map['vendor_name']}');
+
+      return ProductWithVendorModel(
+        product: ProductModel.fromMap(productMap),
+        vendorInfo: VendorInfoModel.fromMap(vendorMap),
+      );
+    }).toList();
+  }
+
+
+  Future<void> debugDatabase() async {
+    final db = await database;
+
+    print('\n========== DEBUG DATABASE ==========');
+
+    // Vérifier les produits
+    final products = await db.query('products');
+    print('📦 Total produits: ${products.length}');
+    for (var p in products) {
+      print('  - ${p['name']} (vendorId: ${p['vendorId']})');
+    }
+
+    // Vérifier les vendeurs
+    final vendors = await db.query('users', where: "role = 'vendor'");
+    print('👤 Total vendeurs: ${vendors.length}');
+    for (var v in vendors) {
+      print('  - ${v['fullName']} (id: ${v['id']})');
+    }
+
+    // Vérifier les clients
+    final clients = await db.query('users', where: "role = 'client'");
+    print('👥 Total clients: ${clients.length}');
+
+    print('=====================================\n');
+  }
+
+  // ============================================
+  // GESTION DES MESSAGES
+  // ============================================
+  Future<List<MessageModel>> getMessages(int userId, int otherId) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'messages',
+      where:
+      '(senderId = ? AND receiverId = ?) OR (senderId = ? AND receiverId = ?)',
+      whereArgs: [userId, otherId, otherId, userId],
+      orderBy: 'date ASC',
+    );
+    return result.map((e) => MessageModel.fromMap(e)).toList();
+  }
+
+  Future<void> insertMessage(MessageModel message) async {
+    final db = await instance.database;
+    await db.insert('messages', message.toMap());
+  }
+
+  // ============================================
+  // GESTION DES COMMANDES
+  // ============================================
+  Future<void> createOrder(int clientId, double total,
+      List<Map<String, dynamic>> items) async {
+    final db = await instance.database;
+
+    await db.transaction((txn) async {
+      final orderId = await txn.insert('orders', {
+        'clientId': clientId,
+        'totalAmount': total,
+        'status': 'En attente',
+        'date': DateTime.now().toIso8601String(),
+      });
+
+      for (var item in items) {
+        await txn.insert('order_items', {
+          'orderId': orderId,
+          'productId': item['productId'],
+          'productName': item['productName'],
+          'quantity': item['quantity'],
+          'price': item['price'],
+        });
+
+        await txn.rawUpdate(
+          'UPDATE products SET stockQuantity = stockQuantity - ? WHERE id = ?',
+          [item['quantity'], item['productId']],
+        );
+      }
+    });
+  }
+
+  Future<List<OrderModel>> getVendorOrders(int vendorId) async {
+    final db = await instance.database;
+
+    final List<Map<String, dynamic>> orderIdsMap = await db.rawQuery('''
+      SELECT DISTINCT o.id 
+      FROM orders o
+      JOIN order_items oi ON o.id = oi.orderId
+      JOIN products p ON oi.productId = p.id
+      WHERE p.vendorId = ?
+      ORDER BY o.date DESC
+    ''', [vendorId]);
+
+    List<OrderModel> orders = [];
+
+    for (var map in orderIdsMap) {
+      int orderId = map['id'];
+
+      final orderInfo = await db.rawQuery('''
+        SELECT o.*, u.fullName as clientName
+        FROM orders o
+        JOIN users u ON o.clientId = u.id
+        WHERE o.id = ?
+      ''', [orderId]);
+
+      if (orderInfo.isNotEmpty) {
+        final itemsMap = await db.query(
+          'order_items',
+          where: 'orderId = ?',
+          whereArgs: [orderId],
+        );
+        final items = itemsMap.map((e) => OrderItem.fromMap(e)).toList();
+
+        orders.add(OrderModel.fromMap(orderInfo.first, items));
+      }
+    }
+    return orders;
+  }
+
+  Future<int> updateOrderStatus(int orderId, String newStatus) async {
+    final db = await instance.database;
+    return await db.update(
+      'orders',
+      {'status': newStatus},
+      where: 'id = ?',
+      whereArgs: [orderId],
+    );
+  }
+
+  // ============================================
+  // GESTION DES CLIENTS (STATS)
+  // ============================================
+  Future<List<ClientStatsModel>> getVendorClients(int vendorId) async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+    SELECT 
+      u.id,
+      u.fullName,
+      u.phone,
+      COUNT(DISTINCT o.id) as orderCount,
+      COALESCE(SUM(o.totalAmount), 0) as totalSpent,
+      MAX(o.date) as lastOrderDate
+    FROM users u
+    LEFT JOIN orders o ON u.id = o.clientId AND o.vendorId = ?
+    WHERE u.role = 'client'
+      AND EXISTS (
+        SELECT 1 FROM orders 
+        WHERE clientId = u.id AND vendorId = ?
+      )
+    GROUP BY u.id
+    ORDER BY totalSpent DESC
+  ''', [vendorId, vendorId]);
+
+    return result.map((map) => ClientStatsModel.fromMap(map)).toList();
+  }
+}

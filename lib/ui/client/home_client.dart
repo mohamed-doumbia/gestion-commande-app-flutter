@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:gestion_commandes/ui/client/reservations_screen.dart';
+import 'package:gestion_commandes/ui/client/shop/catalog_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
+import 'messages_client_screen.dart';
+import 'my_orders_screen.dart';
+
+
 
 class HomeClient extends StatelessWidget {
   const HomeClient({super.key});
@@ -14,121 +20,307 @@ class HomeClient extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // En-tête
+              Row(
                 children: [
-                  const CircleAvatar(radius: 25, backgroundColor: Color(0xFFE2E8F0), child: Icon(Icons.person, color: Colors.black)),
-                  const SizedBox(width: 15),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Bonjour, ${user?.fullName ?? 'Client'}", style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          const Icon(Icons.emoji_events, color: Colors.orange, size: 16),
-                          Text(" BRONZE 0 pts", style: GoogleFonts.poppins(color: Colors.orange, fontWeight: FontWeight.bold)),
-                        ],
-                      )
-                    ],
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: const Color(0xFF1E293B),
+                    child: Text(
+                      user?.fullName[0].toUpperCase() ?? 'C',
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                  const Spacer(),
-                  IconButton(onPressed: (){}, icon: const Icon(Icons.search)),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Bonjour, ${user?.fullName.split(' ').first ?? 'Client'}",
+                          style: GoogleFonts.poppins(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.emoji_events,
+                              color: Colors.amber,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              "BRONZE 0 pts",
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.amber.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.search, size: 28),
+                    onPressed: () {
+                      // Ouvre directement le catalogue avec la barre de recherche
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CatalogScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
-            ),
+              const SizedBox(height: 30),
 
-            // Liste des options (Scrollable)
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  _buildClientCard("Mes Commandes", "0 commandes", Icons.receipt_long, const Color(0xFFE3F2FD)),
-                  _buildClientCard("Catalogue Produits", "Découvrez nos produits", Icons.shopping_bag, const Color(0xFFE8F5E9)),
-                  _buildClientCard("Messages", "Contactez le vendeur", Icons.chat_bubble_outline, const Color(0xFFE0F2F1)),
-                  _buildClientCard("Réservations", "Réserver une place", Icons.calendar_today, const Color(0xFFFFF3E0)),
-                ],
+              // ============================================
+              // 1. MES COMMANDES
+              // ============================================
+              _buildMenuCard(
+                context,
+                title: "Mes Commandes",
+                subtitle: "0 commandes",
+                icon: Icons.receipt_long,
+                color: Colors.blue.shade50,
+                iconColor: Colors.blue,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MyOrdersScreen(),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 15),
 
-            // Bloc Statistiques (Bas de page - Bleu foncé)
+              // ============================================
+              // 2. CATALOGUE PRODUITS
+              // ============================================
+              _buildMenuCard(
+                context,
+                title: "Catalogue Produits",
+                subtitle: "Découvrez nos produits",
+                icon: Icons.shopping_bag,
+                color: Colors.purple.shade50,
+                iconColor: Colors.purple,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CatalogScreen(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              // ============================================
+              // 3. MESSAGES
+              // ============================================
+              _buildMenuCard(
+                context,
+                title: "Messages",
+                subtitle: "Contactez le vendeur",
+                icon: Icons.message,
+                color: Colors.green.shade50,
+                iconColor: Colors.green,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MessagesClientScreen(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              // ============================================
+              // 4. RÉSERVATIONS
+              // ============================================
+              _buildMenuCard(
+                context,
+                title: "Réservations",
+                subtitle: "Réserver une place",
+                icon: Icons.calendar_today,
+                color: Colors.orange.shade50,
+                iconColor: Colors.orange,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ReservationsScreen(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              // Statistiques
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Mes Statistiques",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatItem("Achats", "0"),
+                        _buildStatItem("Dépensé", "0 FCFA"),
+                        _buildStatItem("Points", "0"),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              // Bouton Déconnexion
+              Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    Provider.of<AuthProvider>(context, listen: false).logout();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LoginScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  label: Text(
+                    "Déconnexion",
+                    style: GoogleFonts.poppins(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(
+      BuildContext context, {
+        required String title,
+        required String subtitle,
+        required IconData icon,
+        required Color color,
+        required Color iconColor,
+        required VoidCallback onTap,
+      }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
             Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: const Color(0xFF3F5878), // Bleu gris foncé
-                borderRadius: BorderRadius.circular(20),
+                color: color,
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: Icon(icon, color: iconColor, size: 30),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Mes Statistiques", style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildStatItem("0", "Achats"),
-                      _buildStatItem("0 FCFA", "Dépensé"),
-                      _buildStatItem("0", "Points"),
-                    ],
-                  )
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1E293B),
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
                 ],
               ),
             ),
-            // Bouton déconnexion temporaire pour test
-            TextButton.icon(
-                onPressed: () {
-                  Provider.of<AuthProvider>(context, listen: false).logout();
-                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
-                },
-                icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text("Déconnexion", style: TextStyle(color: Colors.red))
-            )
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 18,
+              color: Colors.grey,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildClientCard(String title, String subtitle, IconData icon, Color iconBg) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5, offset: const Offset(0, 2))]
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: Colors.black87),
-          ),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
-              Text(subtitle, style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12)),
-            ],
-          ),
-          const Spacer(),
-          const Icon(Icons.chevron_right, color: Colors.grey),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String value, String label) {
+  Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
-        Text(value, style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        Text(label, style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12)),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.grey.shade300,
+          ),
+        ),
       ],
     );
   }

@@ -4,8 +4,10 @@ class UserModel {
   final String phone;
   final String? email;
   final String password;
-  final String role; // 'vendor' ou 'client'
-  final String? shopName; // Null si c'est un client
+  final String role;
+  final String? shopName;
+  final String? city;
+  final String? district;
 
   UserModel({
     this.id,
@@ -15,6 +17,8 @@ class UserModel {
     required this.password,
     required this.role,
     this.shopName,
+    this.city,
+    this.district,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +30,8 @@ class UserModel {
       'password': password,
       'role': role,
       'shopName': shopName,
+      'city': city,
+      'district': district,
     };
   }
 
@@ -38,6 +44,8 @@ class UserModel {
       password: map['password'],
       role: map['role'],
       shopName: map['shopName'],
+      city: map['city'],
+      district: map['district'],
     );
   }
 }

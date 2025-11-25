@@ -9,13 +9,21 @@ class OrderProvider with ChangeNotifier {
   List<OrderModel> get orders => _orders;
   bool get isLoading => _isLoading;
 
-  // Getters filtrés pour les onglets
-  List<OrderModel> get pendingOrders => _orders.where((o) => o.status == 'En attente').toList();
-  List<OrderModel> get activeOrders => _orders.where((o) => o.status == 'Validée' || o.status == 'En cours').toList();
-  List<OrderModel> get historyOrders => _orders.where((o) => o.status == 'Livrée' || o.status == 'Annulée' || o.status == 'Rejetée').toList();
+  List<OrderModel> get pendingOrders =>
+      _orders.where((o) => o.status == 'En attente').toList();
+  List<OrderModel> get activeOrders => _orders
+      .where((o) => o.status == 'Validée' || o.status == 'En cours')
+      .toList();
+  List<OrderModel> get historyOrders => _orders
+      .where((o) =>
+  o.status == 'Livrée' ||
+      o.status == 'Annulée' ||
+      o.status == 'Rejetée')
+      .toList();
 
-  // KPIs
-  double get totalRevenue => _orders.where((o) => o.status != 'Annulée').fold(0, (sum, item) => sum + item.totalAmount);
+  double get totalRevenue => _orders
+      .where((o) => o.status != 'Annulée')
+      .fold(0, (sum, item) => sum + item.totalAmount);
   int get pendingCount => pendingOrders.length;
 
   Future<void> loadVendorOrders(int vendorId) async {
@@ -28,9 +36,8 @@ class OrderProvider with ChangeNotifier {
 
   Future<void> updateStatus(int orderId, String status, int vendorId) async {
     await DatabaseHelper.instance.updateOrderStatus(orderId, status);
-    await loadVendorOrders(vendorId); // Recharger pour mettre à jour l'UI
+    await loadVendorOrders(vendorId);
 
-    // Ici, on pourrait déclencher l'envoi de SMS via un service externe
     print("Statut changé à $status -> SMS envoyé au client (Simulation)");
   }
 }

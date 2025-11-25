@@ -25,13 +25,12 @@ class CartProvider with ChangeNotifier {
 
   void addItem(ProductModel product) {
     if (_items.containsKey(product.id)) {
-      // Augmenter quantité
       _items.update(
         product.id!,
-            (existing) => CartItem(product: existing.product, quantity: existing.quantity + 1),
+            (existing) => CartItem(
+            product: existing.product, quantity: existing.quantity + 1),
       );
     } else {
-      // Ajouter nouveau
       _items.putIfAbsent(
         product.id!,
             () => CartItem(product: product),
@@ -45,7 +44,8 @@ class CartProvider with ChangeNotifier {
     if (_items[productId]!.quantity > 1) {
       _items.update(
           productId,
-              (existing) => CartItem(product: existing.product, quantity: existing.quantity - 1));
+              (existing) => CartItem(
+              product: existing.product, quantity: existing.quantity - 1));
     } else {
       _items.remove(productId);
     }

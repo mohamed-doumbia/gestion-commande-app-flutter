@@ -2,32 +2,48 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/product_model.dart';
-import '../../../providers/auth_provider.dart';
 import '../../../providers/product_provider.dart';
 import '../../../widget/category_selector_widget.dart';
 import '../../../widget/image_picker_widget.dart';
+import '../../../data/local/database_helper.dart';
 
+class EditProductScreen extends StatefulWidget {
+  final ProductModel product;
 
-class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({super.key});
+  const EditProductScreen({super.key, required this.product});
 
   @override
-  State<AddProductScreen> createState() => _AddProductScreenState();
+  State<EditProductScreen> createState() => _EditProductScreenState();
 }
 
-class _AddProductScreenState extends State<AddProductScreen> {
+class _EditProductScreenState extends State<EditProductScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _stockController = TextEditingController();
-  final _descController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _priceController;
+  late TextEditingController _stockController;
+  late TextEditingController _descController;
 
   String? _selectedCategory;
-  final List<String?> _imagePaths = [null, null, null];
+  late List<String?> _imagePaths;
 
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController(text: widget.product.name);
+    _priceController =
+        TextEditingController(text: widget.product.price.toString());
+    _stockController =
+        TextEditingController(text: widget.product.stockQuantity.toString());
+    _descController =
+        TextEditingController(text: widget.product.description ?? '');
+    _selectedCategory = widget.product.category;
+
+    // Charger les images existantes
+    _imagePaths = List.filled(3, null);
+    for (int i = 0; i < widget.product.images.length && i < 3; i++) {
+      _imagePaths[i] = widget.product.images[i];
+    }
+
     _loadCategories();
   }
 
@@ -50,7 +66,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          "Ajouter un produit",
+          "Modifier le produit",
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -59,6 +75,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () => _showDeleteDialog(),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -127,7 +149,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLabel("Stock initial"),
+                        _buildLabel("Stock"),
                         _buildInput(_stockController, "10", isNumber: true),
                       ],
                     ),
@@ -141,26 +163,50 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
               const SizedBox(height: 30),
 
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: _submitProduct,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF1E293B)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        "Annuler",
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: const Color(0xFF1E293B),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                  child: Text(
-                    "Publier le produit",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _updateProduct,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E293B),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        "Enregistrer",
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
@@ -216,7 +262,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 
-  void _submitProduct() {
+  void _updateProduct() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedCategory == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -231,16 +277,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
         return;
       }
 
-      final user =
-          Provider.of<AuthProvider>(context, listen: false).currentUser;
-      if (user == null || user.id == null) return;
-
       // Filtrer les images non nulles
       final imagesList =
       _imagePaths.where((path) => path != null).cast<String>().toList();
 
-      final newProduct = ProductModel(
-        vendorId: user.id!,
+      final updatedProduct = ProductModel(
+        id: widget.product.id,
+        vendorId: widget.product.vendorId,
         name: _nameController.text,
         category: _selectedCategory!,
         price: double.parse(_priceController.text),
@@ -249,20 +292,98 @@ class _AddProductScreenState extends State<AddProductScreen> {
         images: imagesList,
       );
 
-      Provider.of<ProductProvider>(context, listen: false)
-          .addProduct(newProduct);
+      // Mise à jour dans la BDD
+      final db = await DatabaseHelper.instance.database;
+      await db.update(
+        'products',
+        updatedProduct.toMap(),
+        where: 'id = ?',
+        whereArgs: [updatedProduct.id],
+      );
 
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Produit mis à jour avec succès",
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context, true); // Retourne true pour indiquer la modification
+      }
+    }
+  }
+
+  void _showDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.warning, color: Colors.red),
+            const SizedBox(width: 10),
+            Text(
+              "Supprimer le produit",
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          "Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est irréversible.",
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("Annuler", style: GoogleFonts.poppins()),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _deleteProduct();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              "Supprimer",
+              style: GoogleFonts.poppins(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteProduct() async {
+    final db = await DatabaseHelper.instance.database;
+    await db.delete(
+      'products',
+      where: 'id = ?',
+      whereArgs: [widget.product.id],
+    );
+
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "Produit ajouté avec succès",
+            "Produit supprimé",
             style: GoogleFonts.poppins(),
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.orange,
         ),
       );
 
-      Navigator.pop(context);
+      Navigator.pop(context, true); // Retourne true pour recharger la liste
     }
   }
 }

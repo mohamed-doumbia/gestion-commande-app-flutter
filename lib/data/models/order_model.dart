@@ -3,7 +3,11 @@ class OrderItem {
   final int quantity;
   final double price;
 
-  OrderItem({required this.productName, required this.quantity, required this.price});
+  OrderItem({
+    required this.productName,
+    required this.quantity,
+    required this.price,
+  });
 
   factory OrderItem.fromMap(Map<String, dynamic> map) {
     return OrderItem(
@@ -17,7 +21,7 @@ class OrderItem {
 class OrderModel {
   final int id;
   final int clientId;
-  final String clientName; // On récupère ça via une jointure
+  final String clientName;
   final double totalAmount;
   final String status;
   final DateTime date;
@@ -33,7 +37,6 @@ class OrderModel {
     required this.items,
   });
 
-  // Factory spécial pour la récupération complexe depuis la DB
   factory OrderModel.fromMap(Map<String, dynamic> map, List<OrderItem> items) {
     return OrderModel(
       id: map['id'],
