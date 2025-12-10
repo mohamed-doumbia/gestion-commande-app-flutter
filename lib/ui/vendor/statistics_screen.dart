@@ -51,8 +51,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: Consumer3<OrderProvider, ClientProvider, ProductProvider>(
-        builder: (context, orderProvider, clientProvider, productProvider,
-            child) {
+        builder: (context, orderProvider, clientProvider, productProvider, child) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -74,6 +73,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   mainAxisSpacing: 15,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
+
+                  // --- CORRECTION ICI ---
+                  // Un ratio < 1 rend les cartes plus hautes que larges.
+                  // Cela donne de la place au texte pour ne pas déborder.
+                  childAspectRatio: 0.85,
+                  // ---------------------
+
                   children: [
                     _buildStatCard(
                       "Commandes en attente",
@@ -121,8 +127,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildBigStatCard(
-      String title, String value, IconData icon, Color color) {
+  Widget _buildBigStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -175,8 +180,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
@@ -202,15 +206,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             child: Icon(icon, color: color, size: 30),
           ),
           const SizedBox(height: 15),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1E293B),
+
+          // J'ai ajouté FittedBox pour que si le chiffre est énorme (ex: 100000), il rétrécisse au lieu de casser
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1E293B),
+              ),
             ),
           ),
+
           const SizedBox(height: 5),
+
           Text(
             title,
             style: GoogleFonts.poppins(
@@ -218,6 +229,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               color: Colors.grey.shade600,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2, // Limite à 2 lignes
+            overflow: TextOverflow.ellipsis, // Met "..." si c'est trop long
           ),
         ],
       ),

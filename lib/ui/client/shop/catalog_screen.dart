@@ -19,11 +19,18 @@ class CatalogScreen extends StatefulWidget {
 class _CatalogScreenState extends State<CatalogScreen> {
   String _selectedCategory = 'Tout';
   String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController(); // AJOUT
 
   @override
   void initState() {
     super.initState();
     _debugAndLoadProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose(); // AJOUT
+    super.dispose();
   }
 
   Future<void> _debugAndLoadProducts() async {
@@ -162,10 +169,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
         ],
       ),
       child: TextField(
+        controller: _searchController, // AJOUT
         onChanged: (value) {
           setState(() {
-            _searchQuery = value.toLowerCase();
+            _searchQuery = value.toLowerCase().trim(); // AJOUT trim()
           });
+          print('🔍 Recherche: "$_searchQuery"'); // DEBUG
         },
         decoration: InputDecoration(
           hintText: "Rechercher un produit, vendeur, ville...",
@@ -175,6 +184,18 @@ class _CatalogScreenState extends State<CatalogScreen> {
           ),
           border: InputBorder.none,
           icon: const Icon(Icons.search, color: Colors.grey),
+          // AJOUT: Bouton pour effacer la recherche
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+            icon: const Icon(Icons.clear, color: Colors.grey),
+            onPressed: () {
+              setState(() {
+                _searchController.clear();
+                _searchQuery = '';
+              });
+            },
+          )
+              : null,
         ),
       ),
     );
@@ -182,6 +203,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   Widget _buildProductsList(ProductProvider productProvider) {
     final groupedProducts = _filterAndGroupProducts(productProvider);
+
+    print('📊 Produits groupés: ${groupedProducts.length} vendeurs'); // DEBUG
 
     if (groupedProducts.isEmpty) {
       return _buildEmptyState();
@@ -191,7 +214,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
       padding: const EdgeInsets.only(bottom: 20),
       itemCount: groupedProducts.length,
       itemBuilder: (context, index) {
-        final products = groupedProducts.values.elementAt(index);
+        final vendorId = groupedProducts.keys.elementAt(index);
+        final products = groupedProducts[vendorId]!;
+
+        print('✅ Vendeur $vendorId: ${products.length} produits'); // DEBUG
 
         return VendorProductsSection(
           productsWithVendor: products,
@@ -219,27 +245,45 @@ class _CatalogScreenState extends State<CatalogScreen> {
       ProductProvider productProvider) {
     var products = productProvider.productsWithVendor;
 
+    print('🔍 Filtrage - Total produits: ${products.length}'); // DEBUG
+    print('🔍 Catégorie sélectionnée: $_selectedCategory'); // DEBUG
+    print('🔍 Recherche: "$_searchQuery"'); // DEBUG
+
+    // Filtre par Catégorie
     if (_selectedCategory != 'Tout') {
       products = products
           .where((p) => p.product.category == _selectedCategory)
           .toList();
+      print('📁 Après filtre catégorie: ${products.length} produits'); // DEBUG
     }
 
+    // Filtre par Recherche
     if (_searchQuery.isNotEmpty) {
       products = products.where((p) {
         final productName = p.product.name.toLowerCase();
-        final productCategory = p.product.category.toLowerCase();
         final vendorName = p.vendorInfo.name.toLowerCase();
-        final vendorCity = (p.vendorInfo.city ?? '').toLowerCase();
+        final shopName = (p.vendorInfo.shopName ?? '').toLowerCase();
+        final city = (p.vendorInfo.city ?? '').toLowerCase();
 
-        return productName.contains(_searchQuery) ||
-            productCategory.contains(_searchQuery) ||
+        final matches = productName.contains(_searchQuery) ||
             vendorName.contains(_searchQuery) ||
-            vendorCity.contains(_searchQuery);
+            shopName.contains(_searchQuery) ||
+            city.contains(_searchQuery);
+
+        if (matches) {
+          print('✅ Match: ${p.product.name} - Vendeur: ${p.vendorInfo.name}'); // DEBUG
+        }
+
+        return matches;
       }).toList();
+
+      print('🔎 Après recherche: ${products.length} produits'); // DEBUG
     }
 
-    return productProvider.groupByVendor(products);
+    final grouped = productProvider.groupByVendor(products);
+    print('👥 Vendeurs après groupement: ${grouped.length}'); // DEBUG
+
+    return grouped;
   }
 
   Widget _buildEmptyState() {
@@ -279,6 +323,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 setState(() {
                   _selectedCategory = 'Tout';
                   _searchQuery = '';
+                  _searchController.clear(); // IMPORTANT: Vider le controller
                 });
               },
               style: ElevatedButton.styleFrom(

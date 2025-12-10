@@ -16,7 +16,7 @@ class VendorInfoModel {
   });
 
   // Nom d'affichage (priorité au shopName)
-  String get displayName => shopName ?? name;
+  String get displayName => "Vendeur $name";
 
   // Localisation formatée
   String get location {

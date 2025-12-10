@@ -410,28 +410,30 @@ class DatabaseHelper {
   // ============================================
   // GESTION DES CLIENTS (STATS)
   // ============================================
+  // Dans DatabaseHelper.dart ...
+
   Future<List<ClientStatsModel>> getVendorClients(int vendorId) async {
-    final db = await database;
+    final db = await instance.database;
 
+    // CORRECTION : On passe par les tables de liaison (JOIN)
+    // Users -> Orders -> OrderItems -> Products (C'est Products qui contient le vendorId)
     final result = await db.rawQuery('''
-    SELECT 
-      u.id,
-      u.fullName,
-      u.phone,
-      COUNT(DISTINCT o.id) as orderCount,
-      COALESCE(SUM(o.totalAmount), 0) as totalSpent,
-      MAX(o.date) as lastOrderDate
-    FROM users u
-    LEFT JOIN orders o ON u.id = o.clientId AND o.vendorId = ?
-    WHERE u.role = 'client'
-      AND EXISTS (
-        SELECT 1 FROM orders 
-        WHERE clientId = u.id AND vendorId = ?
-      )
-    GROUP BY u.id
-    ORDER BY totalSpent DESC
-  ''', [vendorId, vendorId]);
+      SELECT 
+        u.id, 
+        u.fullName, 
+        u.phone, 
+        COUNT(DISTINCT o.id) as orderCount, 
+        SUM(oi.price * oi.quantity) as totalSpent
+      FROM users u
+      JOIN orders o ON u.id = o.clientId
+      JOIN order_items oi ON o.id = oi.orderId
+      JOIN products p ON oi.productId = p.id
+      WHERE p.vendorId = ?
+      GROUP BY u.id
+      ORDER BY totalSpent DESC
+    ''', [vendorId]);
 
-    return result.map((map) => ClientStatsModel.fromMap(map)).toList();
+    // On map les résultats
+    return result.map((e) => ClientStatsModel.fromMap(e)).toList();
   }
 }

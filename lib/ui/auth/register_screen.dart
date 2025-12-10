@@ -59,7 +59,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E293B))),
                 const SizedBox(height: 10),
-                Text("Rejoignez RAPIDOR aujourd'hui",
+                Text("Gérez vos activités en un clin d'oeil",
                     style: GoogleFonts.poppins(
                         fontSize: 14, color: Colors.grey)),
                 const SizedBox(height: 30),
