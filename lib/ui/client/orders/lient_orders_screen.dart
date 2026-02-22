@@ -112,7 +112,13 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> with SingleTick
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Commande #${order.id}", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+              Expanded(
+                child: Text(
+                  "Commande #${order.id}",
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),

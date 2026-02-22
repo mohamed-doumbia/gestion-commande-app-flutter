@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 class ProductModel {
-  final int? id;
-  final int vendorId;
+  final String? id; // UUID (TEXT)
+  final String vendorId; // UUID (TEXT)
   final String name;
   final String category;
   final double price;
@@ -39,8 +39,8 @@ class ProductModel {
       'images': jsonEncode(images),
       'stockQuantity': stockQuantity,
       'branchId': branchId,
-      'created_at': createdAt.toIso8601String(), // 🆕 AJOUTÉ
-      'updated_at': updatedAt.toIso8601String(), // 🆕 AJOUTÉ
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
@@ -58,8 +58,8 @@ class ProductModel {
     }
 
     return ProductModel(
-      id: map['id'],
-      vendorId: map['vendorId'],
+      id: map['id'] as String?,
+      vendorId: map['vendorId'] as String,
       name: map['name'],
       category: map['category'],
       price: map['price'],
@@ -77,8 +77,8 @@ class ProductModel {
   }
 
   ProductModel copyWith({
-    int? id,
-    int? vendorId,
+    String? id,
+    String? vendorId,
     String? name,
     String? category,
     double? price,

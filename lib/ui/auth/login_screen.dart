@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../vendor/home_vendor.dart';
 import '../client/home_client.dart';
 import 'register_screen.dart';
+import 'employee_code_login_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -120,6 +121,65 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontWeight: FontWeight.bold, color: Colors.blue)),
                     )
                   ],
+                ),
+                const SizedBox(height: 24),
+                // Séparateur
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.grey.shade300)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        "OU",
+                        style: GoogleFonts.poppins(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: Colors.grey.shade300)),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Bouton connexion par code
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const EmployeeCodeLoginScreen(),
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF1E293B), width: 2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.vpn_key,
+                          color: Color(0xFF1E293B),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Connexion par code",
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: const Color(0xFF1E293B),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 40),
               ],

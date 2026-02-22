@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 import '../../../providers/cart_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../data/local/database_helper.dart';
@@ -63,10 +64,23 @@ class CartScreen extends StatelessWidget {
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
-                      Icons.fastfood,
-                      color: Colors.grey,
-                      size: 30,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: item.product.images.isNotEmpty
+                          ? Image.file(
+                              File(item.product.images.first),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Icon(
+                                Icons.fastfood,
+                                color: Colors.grey,
+                                size: 30,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.fastfood,
+                              color: Colors.grey,
+                              size: 30,
+                            ),
                     ),
                   ),
                   title: Text(
@@ -91,7 +105,7 @@ class CartScreen extends StatelessWidget {
                           color: Colors.red.shade400,
                         ),
                         onPressed: () =>
-                            cart.removeSingleItem(item.product.id!),
+                            cart.removeSingleItem(item.product.id ?? ''),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -384,7 +398,7 @@ class CartScreen extends StatelessWidget {
 
     // Sauvegarde SQLite
     await DatabaseHelper.instance.createOrder(
-      user.id!,
+      user.id ?? '',
       cart.totalAmount,
       orderItems,
     );

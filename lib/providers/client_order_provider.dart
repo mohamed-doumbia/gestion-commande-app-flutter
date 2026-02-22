@@ -30,7 +30,7 @@ class ClientOrderProvider with ChangeNotifier {
   }
 
   // CHARGEMENT DES DONNÉES
-  Future<void> loadClientOrders(int clientId) async {
+  Future<void> loadClientOrders(String clientId) async {
     _isLoading = true;
     notifyListeners();
 
@@ -49,7 +49,7 @@ class ClientOrderProvider with ChangeNotifier {
     // Pour chaque commande, il faut charger ses items pour avoir le détail
     List<OrderModel> loadedOrders = [];
     for (var row in result) {
-      int orderId = row['id'] as int;
+      String orderId = row['id'] as String;
 
       // Récup items
       final itemsResult = await db.query('order_items', where: 'orderId = ?', whereArgs: [orderId]);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../data/local/database_helper.dart';
 import '../data/models/branch_model.dart';
+import '../utils/code_generator.dart';
 
 /// Provider pour gérer les succursales
 class BranchProvider extends ChangeNotifier {
@@ -23,13 +24,19 @@ class BranchProvider extends ChangeNotifier {
 
   int get activeBranchCount => activeBranches.length;
 
-  // Charger toutes les succursales d'un vendeur
-  Future<void> loadBranches(String vendorId) async {
+  // ============================================
+  // CHARGER TOUTES LES SUCCURSALES D'UN VENDEUR
+  // ============================================
+  // Description : Charge toutes les succursales d'un vendeur depuis la base de données
+  // Paramètre : vendorId peut être un int ou un String (converti automatiquement)
+  Future<void> loadBranches(dynamic vendorId) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final data = await _dbHelper.getBranchesByVendor(vendorId as int);
+      // Convertir vendorId en String (UUID)
+      final vendorIdStr = vendorId.toString();
+      final data = await _dbHelper.getBranchesByVendor(vendorIdStr);
       _branches = data.map((map) => BranchModel.fromMap(map)).toList();
 
       // Sélectionner la première succursale par défaut
@@ -45,36 +52,54 @@ class BranchProvider extends ChangeNotifier {
     }
   }
 
-  // Ajouter une nouvelle succursale
+  // ============================================
+  // AJOUTER UNE NOUVELLE SUCCURSALE
+  // ============================================
+  // Description : Crée une nouvelle succursale avec les informations de base
+  // Note : Les informations financières (loyer, charges) seront configurées
+  //        ultérieurement dans la page Paramètres (Phase 8)
+  // Paramètres :
+  //   - vendorId : ID du vendeur propriétaire
+  //   - name : Nom de la succursale
+  //   - code : Code unique de la succursale
+  //   - country, city, district, address : Informations de localisation
+  //   - phone, email : Informations de contact
+  //   - managerId : ID du manager assigné (optionnel)
+  //   - openingHours : Horaires d'ouverture au format JSON (optionnel)
+  // Retour : ID de la succursale créée ou null en cas d'erreur
   Future<String?> addBranch({
-    required int vendorId,
+    required dynamic vendorId,
     required String name,
-    required String code,
+    String? code, // Optionnel maintenant, sera généré automatiquement si null
     required String country,
     required String city,
     required String district,
-    required String address,
+    String? address,
     double? latitude,
     double? longitude,
-    required String phone,
+    String? phone,
     String? email,
     String? managerId,
-    double monthlyRent = 0.0,
-    double monthlyCharges = 0.0,
     String openingHours = '{}',
   }) async {
     try {
+      // Convertir vendorId en String (UUID)
+      final vendorIdStr = vendorId.toString();
+      
+      // Générer automatiquement le code si non fourni
+      final branchCode = code ?? await CodeGenerator.generateUniqueBranchCode();
+      
       // Vérifier si le code existe déjà
-      if (_branches.any((b) => b.code == code)) {
+      if (_branches.any((b) => b.code == branchCode)) {
         throw Exception('Code succursale déjà utilisé');
       }
 
       final now = DateTime.now();
       final branch = BranchModel(
         id: _uuid.v4(),
-        vendorId: vendorId,
+        vendorId: vendorIdStr,
         name: name,
-        code: code,
+        code: branchCode,
         country: country,
         city: city,
         district: district,
@@ -84,8 +109,8 @@ class BranchProvider extends ChangeNotifier {
         phone: phone,
         email: email,
         managerId: managerId,
-        monthlyRent: monthlyRent,
-        monthlyCharges: monthlyCharges,
+        // Les champs financiers (monthlyRent, monthlyCharges) sont initialisés à 0.0
+        // Ils seront configurés ultérieurement dans la page Paramètres (Phase 8)
         isActive: true,
         openingDate: now,
         openingHours: openingHours,
@@ -225,6 +250,21 @@ class BranchProvider extends ChangeNotifier {
             b.city.toLowerCase().contains(lowerQuery) ||
             b.district.toLowerCase().contains(lowerQuery))
     ).toList();
+  }
+
+  // ============================================
+  // TROUVER UNE SUCCURSALE PAR CODE
+  // ============================================
+  // Description : Recherche une succursale par son code unique
+  // Utilisé pour ouvrir une succursale existante
+  BranchModel? getBranchByCode(String code) {
+    try {
+      return _branches.firstWhere(
+        (b) => b.code.toUpperCase() == code.toUpperCase() && b.isActive,
+      );
+    } catch (e) {
+      return null;
+    }
   }
 
   // Réinitialiser

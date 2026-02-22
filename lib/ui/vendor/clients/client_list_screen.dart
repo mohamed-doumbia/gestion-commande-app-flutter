@@ -29,7 +29,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
     final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
     if (user?.id != null) {
       await Provider.of<ClientProvider>(context, listen: false)
-          .loadClients(user!.id!);
+          .loadClients(user!.id ?? '');
     }
   }
 

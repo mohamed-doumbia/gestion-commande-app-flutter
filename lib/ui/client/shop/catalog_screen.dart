@@ -77,49 +77,52 @@ class _CatalogScreenState extends State<CatalogScreen> {
         actions: [
           Consumer<CartProvider>(
             builder: (context, cart, child) {
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.shopping_cart, size: 28),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CartScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  if (cart.itemCount > 0)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        child: Text(
-                          '${cart.itemCount}',
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.shopping_cart, size: 28),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CartScreen(),
                           ),
-                          textAlign: TextAlign.center,
+                        );
+                      },
+                    ),
+                    if (cart.itemCount > 0)
+                      Positioned(
+                        right: 6,
+                        top: 6,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Text(
+                            cart.itemCount > 99 ? '99+' : '${cart.itemCount}',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               );
             },
           ),
-          const SizedBox(width: 10),
         ],
       ),
       body: RefreshIndicator(
@@ -225,23 +228,49 @@ class _CatalogScreenState extends State<CatalogScreen> {
             print('Clic sur produit: ${product.name}');
           },
           onAddToCart: (product) {
-            Provider.of<CartProvider>(context, listen: false).addItem(product);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  "Ajouté au panier",
-                  style: GoogleFonts.poppins(),
+            // Debug pour vérifier l'ID du produit
+            print('🛒 Tentative d\'ajout au panier: ${product.name}');
+            print('   ID produit: ${product.id}');
+            print('   ID vendeur: ${product.vendorId}');
+            
+            final cartProvider = Provider.of<CartProvider>(context, listen: false);
+            final itemCountBefore = cartProvider.itemCount;
+            
+            cartProvider.addItem(product);
+            
+            // Vérifier si l'ajout a fonctionné
+            final itemCountAfter = cartProvider.itemCount;
+            
+            if (itemCountAfter > itemCountBefore) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "Ajouté au panier",
+                    style: GoogleFonts.poppins(),
+                  ),
+                  duration: const Duration(milliseconds: 800),
+                  backgroundColor: Colors.green,
                 ),
-                duration: const Duration(milliseconds: 800),
-              ),
-            );
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "Erreur: Le produit n'a pas pu être ajouté",
+                    style: GoogleFonts.poppins(),
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           },
         );
       },
     );
   }
 
-  Map<int, List<ProductWithVendorModel>> _filterAndGroupProducts(
+  Map<String, List<ProductWithVendorModel>> _filterAndGroupProducts(
       ProductProvider productProvider) {
     var products = productProvider.productsWithVendor;
 

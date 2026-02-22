@@ -1,7 +1,7 @@
 class MessageModel {
-  final int? id;
-  final int? senderId;
-  final int? receiverId;
+  final String? id; // UUID (TEXT)
+  final String? senderId; // UUID (TEXT)
+  final String? receiverId; // UUID (TEXT)
   final String? text;
   final String? date; // ⚠️ STRING et non DateTime
   final int isMe; // ⚠️ INTEGER (0 ou 1) et non bool
@@ -28,9 +28,9 @@ class MessageModel {
 
   factory MessageModel.fromMap(Map<String, dynamic> map) {
     return MessageModel(
-      id: map['id'],
-      senderId: map['senderId'],
-      receiverId: map['receiverId'],
+      id: map['id'] as String?,
+      senderId: map['senderId'] as String?,
+      receiverId: map['receiverId'] as String?,
       text: map['text'],
       date: map['date'],
       isMe: map['isMe'],

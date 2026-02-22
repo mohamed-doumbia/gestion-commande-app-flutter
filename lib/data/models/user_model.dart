@@ -1,5 +1,5 @@
 class UserModel {
-  final int? id;
+  final String? id; // UUID (TEXT)
   final String fullName;
   final String phone;
   final String? email;
@@ -47,7 +47,7 @@ class UserModel {
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      id: map['id'],
+      id: map['id'] as String?,
       fullName: map['fullName'],
       phone: map['phone'],
       email: map['email'],
@@ -67,7 +67,7 @@ class UserModel {
   }
 
   UserModel copyWith({
-    int? id,
+    String? id,
     String? fullName,
     String? phone,
     String? email,

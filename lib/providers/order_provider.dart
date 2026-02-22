@@ -26,7 +26,7 @@ class OrderProvider with ChangeNotifier {
       .fold(0, (sum, item) => sum + item.totalAmount);
   int get pendingCount => pendingOrders.length;
 
-  Future<void> loadVendorOrders(int vendorId) async {
+  Future<void> loadVendorOrders(String vendorId) async {
     _isLoading = true;
     notifyListeners();
     _orders = await DatabaseHelper.instance.getVendorOrders(vendorId);
@@ -34,7 +34,7 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateStatus(int orderId, String status, int vendorId) async {
+  Future<void> updateStatus(String orderId, String status, String vendorId) async {
     await DatabaseHelper.instance.updateOrderStatus(orderId, status);
     await loadVendorOrders(vendorId);
 

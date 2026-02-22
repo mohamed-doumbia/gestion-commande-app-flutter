@@ -1,5 +1,5 @@
 class ClientStatsModel {
-  final int id;
+  final String id; // UUID (TEXT) - Migré vers String après migration UUID
   final String name;
   final String phone;
   final int totalOrders;
@@ -42,12 +42,12 @@ class ClientStatsModel {
 
   factory ClientStatsModel.fromMap(Map<String, dynamic> map) {
     return ClientStatsModel(
-      id: map['id'],
-      name: map['fullName'],
-      phone: map['phone'],
-      totalOrders: map['orderCount'] ?? 0,
-      totalSpent: (map['totalSpent'] ?? 0.0).toDouble(),
-      lastOrderDate: map['lastOrderDate'],
+      id: map['id'] as String, // UUID (TEXT) - Conversion explicite en String
+      name: map['fullName'] as String,
+      phone: map['phone'] as String,
+      totalOrders: (map['orderCount'] as int?) ?? 0,
+      totalSpent: ((map['totalSpent'] as num?) ?? 0.0).toDouble(),
+      lastOrderDate: map['lastOrderDate'] as String?,
     );
   }
 

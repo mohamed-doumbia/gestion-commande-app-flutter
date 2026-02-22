@@ -19,12 +19,19 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   void initState() {
     super.initState();
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
     final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
     if (user?.id != null) {
-      Provider.of<ProductProvider>(context, listen: false)
+      await Provider.of<ProductProvider>(context, listen: false)
           .loadVendorProducts(user!.id!);
     }
   }
+
+  // didChangeDependencies supprimé pour éviter les rechargements excessifs
+  // Le rechargement se fait maintenant uniquement via le callback du Navigator
 
   @override
   Widget build(BuildContext context) {
@@ -95,11 +102,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddProductScreen()),
           );
+          // Recharger les produits si un produit a été ajouté
+          if (result == true) {
+            await _loadProducts();
+          }
         },
         backgroundColor: const Color(0xFF1E293B),
         icon: const Icon(Icons.add, color: Colors.white),

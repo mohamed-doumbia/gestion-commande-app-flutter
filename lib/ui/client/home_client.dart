@@ -47,21 +47,31 @@ class _HomeClientState extends State<HomeClient> {
                 children: [
                   const CircleAvatar(radius: 25, backgroundColor: Color(0xFFE2E8F0), child: Icon(Icons.person, color: Colors.black)),
                   const SizedBox(width: 15),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Bonjour, ${user?.fullName ?? 'Client'}", style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          const Icon(Icons.emoji_events, color: Colors.orange, size: 16),
-                          // Affichage dynamique du niveau (Bronze, Argent...)
-                          Text(" ${getLoyaltyStatus(orderData.loyaltyPoints)} ${orderData.loyaltyPoints} pts",
-                              style: GoogleFonts.poppins(color: Colors.orange, fontWeight: FontWeight.bold)),
-                        ],
-                      )
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Bonjour, ${user?.fullName ?? 'Client'}",
+                          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.emoji_events, color: Colors.orange, size: 16),
+                            // Affichage dynamique du niveau (Bronze, Argent...)
+                            Flexible(
+                              child: Text(
+                                " ${getLoyaltyStatus(orderData.loyaltyPoints)} ${orderData.loyaltyPoints} pts",
+                                style: GoogleFonts.poppins(color: Colors.orange, fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
                   ),
-                  const Spacer(),
                   IconButton(
                       onPressed: () {
                         Provider.of<AuthProvider>(context, listen: false).logout();

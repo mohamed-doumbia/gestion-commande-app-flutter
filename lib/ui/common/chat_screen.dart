@@ -6,7 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
 
 class ChatScreen extends StatefulWidget {
-  final int otherUserId; // L'ID du vendeur ou du client avec qui on parle
+  final String otherUserId; // L'ID du vendeur ou du client avec qui on parle (UUID)
   final String otherUserName;
 
   const ChatScreen({super.key, required this.otherUserId, required this.otherUserName});
@@ -23,8 +23,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final myId = Provider.of<AuthProvider>(context, listen: false).currentUser!.id!;
-      Provider.of<ChatProvider>(context, listen: false).loadMessages(myId, widget.otherUserId);
+      final myId = Provider.of<AuthProvider>(context, listen: false).currentUser!.id ?? '';
+      Provider.of<ChatProvider>(context, listen: false).loadMessages(myId, widget.otherUserId.toString());
     });
   }
 
@@ -130,7 +130,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       if (_controller.text.isNotEmpty) {
                         Provider.of<ChatProvider>(context, listen: false).sendMessage(
                             myId,
-                            widget.otherUserId,
+                            widget.otherUserId.toString(),
                             _controller.text
                         );
                         _controller.clear();

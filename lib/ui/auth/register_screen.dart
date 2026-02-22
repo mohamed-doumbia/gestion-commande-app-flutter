@@ -20,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _shopNameController = TextEditingController();
+  final _cityController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -30,11 +31,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _fullPhoneNumber = "";
 
   @override
+  void initState() {
+    super.initState();
+    // Écouter les changements du champ magasin pour afficher le champ ville
+    _shopNameController.addListener(() {
+      setState(() {}); // Rebuild pour afficher/masquer le champ ville
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _shopNameController.dispose();
+    _cityController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -85,9 +96,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _phoneController,
                     isPhone: true),
 
-                if (_selectedRole == 'vendor')
+                if (_selectedRole == 'vendor') ...[
                   _buildInput("Nom de la boutique",
                       Icons.store_mall_directory_outlined, _shopNameController),
+                  // Champ ville qui apparaît après le magasin
+                  if (_shopNameController.text.isNotEmpty)
+                    _buildInput("Ville",
+                        Icons.location_city_outlined, _cityController),
+                ],
 
                 _buildInput("Email (optionnel)", Icons.email_outlined,
                     _emailController,
@@ -383,6 +399,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         role: _selectedRole,
         shopName:
         _selectedRole == 'vendor' ? _shopNameController.text : null,
+        city: _selectedRole == 'vendor' && _cityController.text.isNotEmpty
+            ? _cityController.text
+            : null,
       );
 
       final success = await Provider.of<AuthProvider>(context, listen: false)

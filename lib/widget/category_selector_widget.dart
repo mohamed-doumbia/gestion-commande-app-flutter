@@ -163,6 +163,29 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _validateAndAddCategory,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        "Ajouter",
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],

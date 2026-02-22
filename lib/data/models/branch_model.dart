@@ -1,7 +1,7 @@
 /// Modèle Succursale (Branch)
 class BranchModel {
   final String id;
-  final int vendorId; // Propriétaire
+  final String vendorId; // Propriétaire (UUID)
   final String name; // "Magasin Cocody"
   final String code; // "COC-001" (unique)
 
@@ -9,12 +9,12 @@ class BranchModel {
   final String country; // "CI"
   final String city; // "Abidjan"
   final String district; // "Cocody"
-  final String address; // Adresse complète
+  final String? address; // Adresse complète (optionnelle)
   final double? latitude;
   final double? longitude;
 
   // Infos contact
-  final String phone;
+  final String? phone; // Téléphone (optionnel)
   final String? email;
   final String? managerId; // Manager responsable (peut être null au début)
 
@@ -42,10 +42,10 @@ class BranchModel {
     required this.country,
     required this.city,
     required this.district,
-    required this.address,
+    this.address,
     this.latitude,
     this.longitude,
-    required this.phone,
+    this.phone,
     this.email,
     this.managerId,
     this.monthlyRent = 0.0,
@@ -59,13 +59,23 @@ class BranchModel {
   });
 
   // Getters utiles
-  String get fullAddress => '$address, $district, $city, $country';
+  String get fullAddress {
+    if (address != null && address!.isNotEmpty) {
+      return '$address, $district, $city, $country';
+    }
+    return '$district, $city, $country';
+  }
 
   bool get hasLocation => latitude != null && longitude != null;
 
   double get monthlyOperatingCost => monthlyRent + monthlyCharges;
 
-  // Conversion vers Map (pour SQLite)
+  // ============================================
+  // CONVERSION VERS MAP (pour SQLite)
+  // ============================================
+  // Description : Convertit le modèle en Map pour insertion/mise à jour en base
+  // Note : Les champs financiers (monthly_rent, monthly_charges) ne sont plus
+  //        sauvegardés ici. Ils seront gérés dans la table branch_transactions (Phase 3)
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -81,8 +91,7 @@ class BranchModel {
       'phone': phone,
       'email': email,
       'manager_id': managerId,
-      'monthly_rent': monthlyRent,
-      'monthly_charges': monthlyCharges,
+      // monthly_rent et monthly_charges retirés - seront dans branch_transactions (Phase 3)
       'is_active': isActive ? 1 : 0,
       'opening_date': openingDate.toIso8601String(),
       'closing_date': closingDate?.toIso8601String(),
@@ -92,22 +101,29 @@ class BranchModel {
     };
   }
 
-  // Création depuis Map (depuis SQLite)
+  // ============================================
+  // CRÉATION DEPUIS MAP (depuis SQLite)
+  // ============================================
+  // Description : Crée une instance BranchModel depuis les données de la base
+  // Note : Les champs financiers (monthly_rent, monthly_charges) peuvent ne pas
+  //        exister dans la nouvelle structure. On utilise 0.0 par défaut pour compatibilité.
   factory BranchModel.fromMap(Map<String, dynamic> map) {
     return BranchModel(
       id: map['id'] as String,
-      vendorId: map['vendor_id'] as int,
+      vendorId: map['vendor_id'] as String,
       name: map['name'] as String,
       code: map['code'] as String,
       country: map['country'] as String,
       city: map['city'] as String,
       district: map['district'] as String,
-      address: map['address'] as String,
+      address: map['address'] as String?,
       latitude: map['latitude'] as double?,
       longitude: map['longitude'] as double?,
-      phone: map['phone'] as String,
+      phone: map['phone'] as String?,
       email: map['email'] as String?,
       managerId: map['manager_id'] as String?,
+      // Compatibilité : Si monthly_rent/monthly_charges n'existent pas, utiliser 0.0
+      // Ces valeurs seront gérées dans branch_transactions (Phase 3)
       monthlyRent: (map['monthly_rent'] as num?)?.toDouble() ?? 0.0,
       monthlyCharges: (map['monthly_charges'] as num?)?.toDouble() ?? 0.0,
       isActive: map['is_active'] == 1,
@@ -124,7 +140,7 @@ class BranchModel {
   // CopyWith pour modifications
   BranchModel copyWith({
     String? id,
-    int? vendorId,
+    String? vendorId,
     String? name,
     String? code,
     String? country,

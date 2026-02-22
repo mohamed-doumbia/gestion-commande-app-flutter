@@ -19,8 +19,8 @@ class OrderItem {
 }
 
 class OrderModel {
-  final int id;
-  final int clientId;
+  final String id; // UUID (TEXT)
+  final String clientId; // UUID (TEXT)
   final String clientName;
   final double totalAmount;
   final String status;
@@ -39,8 +39,8 @@ class OrderModel {
 
   factory OrderModel.fromMap(Map<String, dynamic> map, List<OrderItem> items) {
     return OrderModel(
-      id: map['id'],
-      clientId: map['clientId'],
+      id: map['id'] as String,
+      clientId: map['clientId'] as String,
       clientName: map['clientName'] ?? 'Client Inconnu',
       totalAmount: map['totalAmount'],
       status: map['status'],

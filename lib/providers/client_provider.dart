@@ -69,7 +69,7 @@ class ClientProvider with ChangeNotifier {
   // CHARGEMENT DES DONNÉES
   // ------------------------------------------------
 
-  Future<void> loadClients(int vendorId) async {
+  Future<void> loadClients(String vendorId) async {
     _isLoading = true;
     notifyListeners(); // Déclenche le spinner
 
@@ -88,7 +88,7 @@ class ClientProvider with ChangeNotifier {
   }
 
   // Méthode utilitaire pour trouver un client spécifique
-  ClientStatsModel? getClientById(int clientId) {
+  ClientStatsModel? getClientById(String clientId) {
     try {
       return _clients.firstWhere((c) => c.id == clientId);
     } catch (e) {

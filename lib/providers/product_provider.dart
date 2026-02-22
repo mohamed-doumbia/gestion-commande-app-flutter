@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../data/local/database_helper.dart';
 import '../data/models/product_model.dart';
 import '../data/models/product_with_vendor_model.dart';
 
 class ProductProvider with ChangeNotifier {
+  final Uuid _uuid = const Uuid();
   List<ProductModel> _products = [];
   List<ProductWithVendorModel> _productsWithVendor = [];
   List<String> _categories = [];
@@ -15,7 +18,7 @@ class ProductProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // ✅ Charger produits vendeur (Dashboard vendeur)
-  Future<void> loadVendorProducts(int vendorId) async {
+  Future<void> loadVendorProducts(String vendorId) async {
     _isLoading = true;
     notifyListeners();
 
@@ -58,11 +61,14 @@ class ProductProvider with ChangeNotifier {
   // ✅ Charger les catégories
   Future<void> loadCategories() async {
     _categories = await DatabaseHelper.instance.getAllCategories();
-    notifyListeners();
+    // Utiliser scheduleMicrotask pour éviter notifyListeners pendant build
+    scheduleMicrotask(() {
+      notifyListeners();
+    });
   }
 
   // ✅ Mettre à jour le stock d'un produit
-  Future<void> updateProductStock(int productId, int newStock) async {
+  Future<void> updateProductStock(String productId, int newStock) async {
     final db = await DatabaseHelper.instance.database;
     await db.update(
       'products',
@@ -70,33 +76,76 @@ class ProductProvider with ChangeNotifier {
       where: 'id = ?',
       whereArgs: [productId],
     );
-    notifyListeners();
+    // Utiliser scheduleMicrotask pour éviter notifyListeners pendant build
+    scheduleMicrotask(() {
+      notifyListeners();
+    });
   }
 
   // ✅ Ajouter une catégorie
   Future<void> addCategory(String categoryName) async {
     await DatabaseHelper.instance.addCategory(categoryName);
-    await loadCategories();
+    // Recharger les catégories de manière asynchrone pour éviter notifyListeners pendant build
+    _categories = await DatabaseHelper.instance.getAllCategories();
+    // Utiliser scheduleMicrotask pour différer notifyListeners après le build
+    scheduleMicrotask(() {
+      notifyListeners();
+    });
   }
 
   // ✅ Ajouter un produit
   Future<void> addProduct(ProductModel product) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.insert('products', product.toMap());
-    await loadVendorProducts(product.vendorId);
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      // Générer un UUID pour le produit s'il n'en a pas
+      final productId = product.id ?? _uuid.v4();
+      
+      // Créer un nouveau produit avec l'ID généré
+      final productWithId = ProductModel(
+        id: productId,
+        vendorId: product.vendorId,
+        name: product.name,
+        category: product.category,
+        price: product.price,
+        description: product.description,
+        images: product.images,
+        stockQuantity: product.stockQuantity,
+        branchId: product.branchId,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+      );
+      
+      print('✅ Ajout produit avec ID: $productId');
+      
+      final db = await DatabaseHelper.instance.database;
+      await db.insert('products', productWithId.toMap());
+      
+      print('✅ Produit inséré dans la base de données');
+      
+      // Recharger les produits après ajout
+      await loadVendorProducts(product.vendorId);
+    } catch (e) {
+      print('❌ Erreur lors de l\'ajout du produit: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // ✅ CORRECTION : Regrouper produits par vendeur
-  Map<int, List<ProductWithVendorModel>> groupByVendor(
+  Map<String, List<ProductWithVendorModel>> groupByVendor(
       [List<ProductWithVendorModel>? products]) {
     // Utiliser la liste fournie ou la liste par défaut
     final productList = products ?? _productsWithVendor;
 
-    Map<int, List<ProductWithVendorModel>> grouped = {};
+    Map<String, List<ProductWithVendorModel>> grouped = {};
 
     for (var item in productList) {
       // ✅ CORRECTION : Utiliser vendorInfo au lieu de vendor
-      final vendorId = item.vendorInfo.id;
+      final vendorId = item.vendorInfo.id.toString();
 
       if (!grouped.containsKey(vendorId)) {
         grouped[vendorId] = [];
@@ -108,7 +157,7 @@ class ProductProvider with ChangeNotifier {
   }
 
   // ✅ Refresh stock
-  Future<void> refreshStock(int? vendorId) async {
+  Future<void> refreshStock(String? vendorId) async {
     if (vendorId != null) {
       await loadVendorProducts(vendorId);
     } else {

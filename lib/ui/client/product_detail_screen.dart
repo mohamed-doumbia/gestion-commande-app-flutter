@@ -334,19 +334,44 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   onPressed: isOutOfStock
                       ? null
                       : () {
-                    Provider.of<CartProvider>(context, listen: false)
-                        .addItem(widget.product);
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          "Ajouté au panier",
-                          style: GoogleFonts.poppins(),
+                    // Debug pour vérifier l'ID du produit
+                    print('🛒 Tentative d\'ajout au panier (détail): ${widget.product.name}');
+                    print('   ID produit: ${widget.product.id}');
+                    print('   ID vendeur: ${widget.product.vendorId}');
+                    
+                    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+                    final itemCountBefore = cartProvider.itemCount;
+                    
+                    cartProvider.addItem(widget.product);
+                    
+                    // Vérifier si l'ajout a fonctionné
+                    final itemCountAfter = cartProvider.itemCount;
+                    
+                    if (itemCountAfter > itemCountBefore) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "Ajouté au panier",
+                            style: GoogleFonts.poppins(),
+                          ),
+                          duration: const Duration(milliseconds: 800),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.green,
                         ),
-                        duration: const Duration(milliseconds: 800),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "Erreur: Le produit n'a pas pu être ajouté",
+                            style: GoogleFonts.poppins(),
+                          ),
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor:

@@ -167,7 +167,7 @@ class _BranchDetailScreenState extends State<BranchDetailScreen>
                     child: _buildInfoCard(
                       icon: Icons.phone,
                       label: 'Contact',
-                      value: _branch!.phone,
+                      value: _branch!.phone ?? 'Non renseigné',
                     ),
                   ),
                 ],

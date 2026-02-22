@@ -34,6 +34,7 @@ dependencies:
   mobile_scanner: ^3.5.5
   intl_phone_field: ^3.2.0
   sqflite_common_ffi: ^2.3.0
+  file_picker: ^10.3.10
 
   # Utils & Stats
   intl: ^0.19.0

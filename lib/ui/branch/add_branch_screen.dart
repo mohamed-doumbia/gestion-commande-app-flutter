@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../providers/branch_provider.dart';
 import '../../../providers/auth_provider.dart';
+import 'branch_dashboard_screen.dart';
 
 /// Écran d'ajout de succursale
 class AddBranchScreen extends StatefulWidget {
@@ -15,30 +16,20 @@ class AddBranchScreen extends StatefulWidget {
 class _AddBranchScreenState extends State<AddBranchScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _codeController = TextEditingController();
   final _countryController = TextEditingController();
   final _cityController = TextEditingController();
   final _districtController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
-  final _rentController = TextEditingController();
-  final _chargesController = TextEditingController();
 
   bool _isLoading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _codeController.dispose();
     _countryController.dispose();
     _cityController.dispose();
     _districtController.dispose();
-    _addressController.dispose();
-    _phoneController.dispose();
     _emailController.dispose();
-    _rentController.dispose();
-    _chargesController.dispose();
     super.dispose();
   }
 
@@ -77,23 +68,6 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: _codeController,
-              label: 'Code unique',
-              hint: 'Ex: COC-001',
-              icon: Icons.qr_code,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Veuillez entrer un code';
-                }
-                if (value.length < 3) {
-                  return 'Code trop court (min 3 caractères)';
-                }
-                return null;
-              },
-            ),
-
             const SizedBox(height: 24),
 
             // Section Localisation
@@ -136,39 +110,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: _addressController,
-              label: 'Adresse complète',
-              hint: 'Ex: Rue des Jardins, près du carrefour',
-              icon: Icons.location_on,
-              maxLines: 2,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Veuillez entrer une adresse';
-                }
-                return null;
-              },
-            ),
-
             const SizedBox(height: 24),
 
             // Section Contact
             _buildSectionTitle('Contact'),
-            _buildTextField(
-              controller: _phoneController,
-              label: 'Téléphone',
-              hint: '+225 XX XX XX XX XX',
-              icon: Icons.phone,
-              keyboardType: TextInputType.phone,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Veuillez entrer un téléphone';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
             _buildTextField(
               controller: _emailController,
               label: 'Email (optionnel)',
@@ -179,52 +124,28 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
 
             const SizedBox(height: 24),
 
-            // Section Financier
-            _buildSectionTitle('Informations Financières'),
-            _buildTextField(
-              controller: _rentController,
-              label: 'Loyer mensuel (FCFA)',
-              hint: '0',
-              icon: Icons.home,
-              keyboardType: TextInputType.number,
+            // Bouton Ouvrir succursale existante
+            OutlinedButton.icon(
+              onPressed: _openExistingBranch,
+              icon: const Icon(Icons.folder_open),
+              label: Text(
+                'Ouvrir succursale existante',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF1E293B),
+                side: const BorderSide(color: Color(0xFF1E293B), width: 2),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
+
             const SizedBox(height: 16),
-            _buildTextField(
-              controller: _chargesController,
-              label: 'Charges mensuelles (FCFA)',
-              hint: '0',
-              icon: Icons.bolt,
-              keyboardType: TextInputType.number,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Info facturation
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.orange),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Facturation : 1000 FCFA/mois par succursale',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: Colors.orange.shade900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
 
             // Bouton Enregistrer
             ElevatedButton(
@@ -339,17 +260,14 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     final branchId = await branchProvider.addBranch(
       vendorId: vendorId,
       name: _nameController.text.trim(),
-      code: _codeController.text.trim().toUpperCase(),
+      // Le code sera généré automatiquement
       country: _countryController.text.trim(),
       city: _cityController.text.trim(),
       district: _districtController.text.trim(),
-      address: _addressController.text.trim(),
-      phone: _phoneController.text.trim(),
+      phone: null, // Téléphone retiré du formulaire
       email: _emailController.text.trim().isEmpty
           ? null
           : _emailController.text.trim(),
-      monthlyRent: double.tryParse(_rentController.text) ?? 0.0,
-      monthlyCharges: double.tryParse(_chargesController.text) ?? 0.0,
     );
 
     setState(() => _isLoading = false);
@@ -357,6 +275,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     if (branchId != null) {
       if (!mounted) return;
 
+      // Afficher message de succès
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -364,12 +283,118 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
             style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
         ),
       );
 
-      Navigator.pop(context, true); // Retour avec succès
+      // Rediriger vers le dashboard de la succursale créée
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BranchDashboardScreen(branchId: branchId),
+        ),
+      );
     } else {
       _showError('Erreur lors de la création de la succursale');
+    }
+  }
+
+  /// ============================================
+  /// OUVRIR UNE SUCCURSALE EXISTANTE
+  /// ============================================
+  /// Description : Affiche un dialogue pour saisir le code de la succursale
+  /// Si le code existe, redirige vers le dashboard de cette succursale
+  Future<void> _openExistingBranch() async {
+    final codeController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Ouvrir succursale existante',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Entrez le code de la succursale que vous avez créée précédemment',
+              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade700),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: codeController,
+              decoration: InputDecoration(
+                labelText: 'Code succursale',
+                hintText: 'Ex: COC-001',
+                prefixIcon: const Icon(Icons.qr_code),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              style: GoogleFonts.poppins(),
+              textCapitalization: TextCapitalization.characters,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Annuler', style: GoogleFonts.poppins()),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (codeController.text.trim().isNotEmpty) {
+                Navigator.pop(context, true);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E293B),
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Ouvrir', style: GoogleFonts.poppins()),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && codeController.text.trim().isNotEmpty) {
+      final code = codeController.text.trim().toUpperCase();
+      
+      // Charger toutes les succursales du vendeur depuis la base de données
+      final authProvider = context.read<AuthProvider>();
+      final vendorId = authProvider.currentUser?.id;
+      
+      if (vendorId == null) {
+        _showError('Erreur: Utilisateur non connecté');
+        return;
+      }
+
+      // Charger les succursales depuis la BDD
+      final branchProvider = context.read<BranchProvider>();
+      await branchProvider.loadBranches(vendorId);
+
+      // Chercher la succursale par code
+      final branch = branchProvider.getBranchByCode(code);
+
+      if (branch != null) {
+        // Succursale trouvée, rediriger vers le dashboard
+        if (!mounted) return;
+        
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BranchDashboardScreen(branchId: branch.id),
+          ),
+        );
+      } else {
+        // Code non trouvé
+        if (!mounted) return;
+        
+        _showError('Aucune succursale trouvée avec le code "$code"');
+      }
     }
   }
 

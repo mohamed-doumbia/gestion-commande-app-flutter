@@ -10,7 +10,7 @@ class ChatProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // Charger la conversation
-  Future<void> loadMessages(int myId, int otherId) async {
+  Future<void> loadMessages(String myId, String otherId) async {
     _isLoading = true;
     notifyListeners();
 
@@ -21,7 +21,7 @@ class ChatProvider with ChangeNotifier {
   }
 
   // Envoyer un message
-  Future<void> sendMessage(int myId, int otherId, String text) async {
+  Future<void> sendMessage(String myId, String otherId, String text) async {
     final newMessage = MessageModel(
       senderId: myId,
       receiverId: otherId,
@@ -41,7 +41,7 @@ class ChatProvider with ChangeNotifier {
     _simulateAutoReply(otherId, myId);
   }
 
-  void _simulateAutoReply(int senderId, int receiverId) {
+  void _simulateAutoReply(String senderId, String receiverId) {
     Future.delayed(const Duration(seconds: 2), () async {
       final reply = MessageModel(
         senderId: senderId,

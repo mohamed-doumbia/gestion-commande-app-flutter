@@ -27,7 +27,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         Provider.of<OrderProvider>(context, listen: false)
             .loadVendorOrders(user!.id!),
         Provider.of<ClientProvider>(context, listen: false)
-            .loadClients(user.id!),
+            .loadClients(user.id ?? ''),
         Provider.of<ProductProvider>(context, listen: false)
             .loadVendorProducts(user.id!),
       ]);

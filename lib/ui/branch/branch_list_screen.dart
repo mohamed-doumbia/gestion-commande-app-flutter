@@ -5,6 +5,7 @@ import '../../../providers/branch_provider.dart';
 import '../../../providers/auth_provider.dart';
 import 'add_branch_screen.dart';
 import 'branch_detail_screen.dart';
+import 'branch_dashboard_screen.dart';
 
 
 /// Écran liste des succursales
@@ -484,10 +485,11 @@ class _BranchesListScreenState extends State<BranchesListScreen> {
   }
 
   void _navigateToBranchDetail(String branchId) {
+    // Rediriger vers le nouveau dashboard succursale (Phase 2)
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => BranchDetailScreen(branchId: branchId),
+        builder: (_) => BranchDashboardScreen(branchId: branchId),
       ),
     );
   }

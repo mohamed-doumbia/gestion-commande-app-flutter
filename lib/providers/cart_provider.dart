@@ -9,9 +9,9 @@ class CartItem {
 }
 
 class CartProvider with ChangeNotifier {
-  final Map<int, CartItem> _items = {};
+  final Map<String, CartItem> _items = {};
 
-  Map<int, CartItem> get items => _items;
+  Map<String, CartItem> get items => _items;
 
   int get itemCount => _items.length;
 
@@ -24,22 +24,38 @@ class CartProvider with ChangeNotifier {
   }
 
   void addItem(ProductModel product) {
-    if (_items.containsKey(product.id)) {
+    final productId = product.id ?? '';
+    
+    // Debug pour identifier le problème
+    if (productId.isEmpty) {
+      debugPrint('❌ ERREUR PANIER: Produit "${product.name}" n\'a pas d\'ID !');
+      debugPrint('   ProductModel.id: ${product.id}');
+      debugPrint('   ProductModel.vendorId: ${product.vendorId}');
+      return;
+    }
+    
+    debugPrint('✅ Ajout au panier: ${product.name} (ID: $productId)');
+    
+    if (_items.containsKey(productId)) {
       _items.update(
-        product.id!,
+        productId,
             (existing) => CartItem(
             product: existing.product, quantity: existing.quantity + 1),
       );
+      debugPrint('   → Quantité mise à jour: ${_items[productId]!.quantity}');
     } else {
       _items.putIfAbsent(
-        product.id!,
+        productId,
             () => CartItem(product: product),
       );
+      debugPrint('   → Nouveau produit ajouté');
     }
+    
+    debugPrint('📦 Total items dans le panier: ${_items.length}');
     notifyListeners();
   }
 
-  void removeSingleItem(int productId) {
+  void removeSingleItem(String productId) {
     if (!_items.containsKey(productId)) return;
     if (_items[productId]!.quantity > 1) {
       _items.update(
@@ -52,7 +68,7 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void removeItem(int productId) {
+  void removeItem(String productId) {
     _items.remove(productId);
     notifyListeners();
   }

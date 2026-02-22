@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../../data/local/database_helper.dart';
 import '../../../data/models/product_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/product_provider.dart';
@@ -35,6 +34,8 @@ class _StockManagementScreenState extends State<StockManagementScreen>
           .loadCategories();
     }
   }
+
+  // didChangeDependencies supprimé - le Consumer<ProductProvider> écoute automatiquement les changements
 
   @override
   void dispose() {
@@ -626,21 +627,16 @@ class _StockManagementScreenState extends State<StockManagementScreen>
         ? (product.stockQuantity - quantity).clamp(0, double.infinity).toInt()
         : product.stockQuantity + quantity;
 
-    // Mise à jour dans la BDD
-    final db = await Provider.of<ProductProvider>(context, listen: false)
-        .database;
-    await db.update(
-      'products',
-      {'stockQuantity': newStock},
-      where: 'id = ?',
-      whereArgs: [product.id],
-    );
+    // Mise à jour via le provider
+    await Provider.of<ProductProvider>(context, listen: false)
+        .updateProductStock(product.id!, newStock);
 
     // Recharger les produits
     await Provider.of<ProductProvider>(context, listen: false)
         .loadVendorProducts(user!.id!);
 
     // Feedback
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -688,13 +684,4 @@ class StockLevel {
     required this.icon,
     required this.label,
   });
-}
-
-// Extension pour accéder à la database depuis le provider
-extension ProductProviderExtension on ProductProvider {
-  Future<dynamic> get database async {
-    // Import nécessaire
-    final db = await DatabaseHelper.instance.database;
-    return db;
-  }
 }

@@ -2,7 +2,7 @@
 class EmployeeModel {
   final String id;
   final String branchId;
-  final int vendorId;
+  final String vendorId; // UUID (TEXT)
   final String firstName;
   final String lastName;
   final String phone;
@@ -11,12 +11,16 @@ class EmployeeModel {
   final String? idCard; // 🆕 Photo CNI
 
   // Poste
-  final String role; // "manager", "vendeur", "caissier"
+  final String role; // "manager", "vendeur", "caissier" (ancien champ, gardé pour compatibilité)
+  final String? roleId; // 🆕 Phase 4 : ID du rôle dans la table roles
+  final String? departmentCode; // 🆕 Phase 4 : Code d'accès unique par département
+  final String? accessCode; // 🆕 Code d'accès unique de 4 chiffres pour authentification
   final String contractType; // 🆕 "CDI", "CDD", "Stage", "Freelance"
   final String permissions; // JSON: ["vente","stock_read"]
 
   // Salaire
-  final double baseSalary; // 🆕 Salaire de base
+  final double baseSalary; // 🆕 Salaire de base (alias pour salary dans BDD)
+  final double? salary; // 🆕 Phase 4 : Salaire (peut être différent de baseSalary)
   final String paymentFrequency; // 🆕 "monthly", "weekly", "daily"
   final String? paymentMethod; // 🆕 "cash", "mobile_money", "bank"
   final double? commissionRate; // 🆕 % commission (ex: 0.02 = 2%)
@@ -34,6 +38,7 @@ class EmployeeModel {
 
   // Status
   final bool isActive;
+  final bool isDeleted; // 🆕 Phase 4 : Soft delete
   final DateTime hireDate;
   final DateTime? terminationDate;
 
@@ -56,9 +61,13 @@ class EmployeeModel {
     this.photo,
     this.idCard,
     required this.role,
+    this.roleId,
+    this.departmentCode,
+    this.accessCode,
     this.contractType = 'CDI',
     this.permissions = '[]',
     this.baseSalary = 0.0,
+    this.salary,
     this.paymentFrequency = 'monthly',
     this.paymentMethod,
     this.commissionRate,
@@ -70,6 +79,7 @@ class EmployeeModel {
     this.totalRevenue = 0.0,
     this.customerRating,
     this.isActive = true,
+    this.isDeleted = false,
     required this.hireDate,
     this.terminationDate,
     this.emergencyContact,
@@ -109,9 +119,14 @@ class EmployeeModel {
       'photo': photo,
       'idCard': idCard,
       'role': role,
+      'role_id': roleId,
+      'department_code': departmentCode,
+      'access_code': accessCode,
       'contractType': contractType,
+      'contract_type': contractType, // Pour compatibilité avec BDD
       'permissions': permissions,
       'baseSalary': baseSalary,
+      'salary': salary ?? baseSalary, // Utiliser salary si défini, sinon baseSalary
       'paymentFrequency': paymentFrequency,
       'paymentMethod': paymentMethod,
       'commissionRate': commissionRate,
@@ -123,9 +138,11 @@ class EmployeeModel {
       'totalRevenue': totalRevenue,
       'customerRating': customerRating,
       'isActive': isActive ? 1 : 0,
+      'is_deleted': isDeleted ? 1 : 0,
       'hireDate': hireDate.toIso8601String(),
       'terminationDate': terminationDate?.toIso8601String(),
       'emergencyContact': emergencyContact,
+      'emergency_contact': emergencyContact, // Pour compatibilité avec BDD
       'emergencyPhone': emergencyPhone,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -136,7 +153,7 @@ class EmployeeModel {
     return EmployeeModel(
       id: map['id'] as String,
       branchId: map['branchId'] as String,
-      vendorId: map['vendorId'] as int,
+      vendorId: map['vendorId'] as String,
       firstName: map['firstName'] as String,
       lastName: map['lastName'] as String,
       phone: map['phone'] as String,
@@ -144,9 +161,13 @@ class EmployeeModel {
       photo: map['photo'] as String?,
       idCard: map['idCard'] as String?,
       role: map['role'] as String,
-      contractType: map['contractType'] as String? ?? 'CDI',
+      roleId: map['role_id'] as String?,
+      departmentCode: map['department_code'] as String?,
+      accessCode: map['access_code'] as String?,
+      contractType: map['contractType'] as String? ?? map['contract_type'] as String? ?? 'CDI',
       permissions: map['permissions'] as String? ?? '[]',
       baseSalary: (map['baseSalary'] as num?)?.toDouble() ?? 0.0,
+      salary: (map['salary'] as num?)?.toDouble(),
       paymentFrequency: map['paymentFrequency'] as String? ?? 'monthly',
       paymentMethod: map['paymentMethod'] as String?,
       commissionRate: (map['commissionRate'] as num?)?.toDouble(),
@@ -157,12 +178,13 @@ class EmployeeModel {
       totalSales: map['totalSales'] as int? ?? 0,
       totalRevenue: (map['totalRevenue'] as num?)?.toDouble() ?? 0.0,
       customerRating: (map['customerRating'] as num?)?.toDouble(),
-      isActive: map['isActive'] == 1,
+      isActive: (map['isActive'] as int? ?? 1) == 1,
+      isDeleted: (map['is_deleted'] as int? ?? 0) == 1,
       hireDate: DateTime.parse(map['hireDate'] as String),
       terminationDate: map['terminationDate'] != null
           ? DateTime.parse(map['terminationDate'] as String)
           : null,
-      emergencyContact: map['emergencyContact'] as String?,
+      emergencyContact: map['emergencyContact'] as String? ?? map['emergency_contact'] as String?,
       emergencyPhone: map['emergencyPhone'] as String?,
       createdAt: DateTime.parse(map['createdAt'] as String),
       updatedAt: DateTime.parse(map['updatedAt'] as String),
@@ -172,7 +194,7 @@ class EmployeeModel {
   EmployeeModel copyWith({
     String? id,
     String? branchId,
-    int? vendorId,
+    String? vendorId,
     String? firstName,
     String? lastName,
     String? phone,
@@ -180,9 +202,13 @@ class EmployeeModel {
     String? photo,
     String? idCard,
     String? role,
+    String? roleId,
+    String? departmentCode,
+    String? accessCode,
     String? contractType,
     String? permissions,
     double? baseSalary,
+    double? salary,
     String? paymentFrequency,
     String? paymentMethod,
     double? commissionRate,
@@ -194,6 +220,7 @@ class EmployeeModel {
     double? totalRevenue,
     double? customerRating,
     bool? isActive,
+    bool? isDeleted,
     DateTime? hireDate,
     DateTime? terminationDate,
     String? emergencyContact,
@@ -212,9 +239,13 @@ class EmployeeModel {
       photo: photo ?? this.photo,
       idCard: idCard ?? this.idCard,
       role: role ?? this.role,
+      roleId: roleId ?? this.roleId,
+      departmentCode: departmentCode ?? this.departmentCode,
+      accessCode: accessCode ?? this.accessCode,
       contractType: contractType ?? this.contractType,
       permissions: permissions ?? this.permissions,
       baseSalary: baseSalary ?? this.baseSalary,
+      salary: salary ?? this.salary,
       paymentFrequency: paymentFrequency ?? this.paymentFrequency,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       commissionRate: commissionRate ?? this.commissionRate,
@@ -226,6 +257,7 @@ class EmployeeModel {
       totalRevenue: totalRevenue ?? this.totalRevenue,
       customerRating: customerRating ?? this.customerRating,
       isActive: isActive ?? this.isActive,
+      isDeleted: isDeleted ?? this.isDeleted,
       hireDate: hireDate ?? this.hireDate,
       terminationDate: terminationDate ?? this.terminationDate,
       emergencyContact: emergencyContact ?? this.emergencyContact,

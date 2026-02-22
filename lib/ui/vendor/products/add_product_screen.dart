@@ -103,8 +103,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       setState(() => _selectedCategory = category);
                     },
                     onAddCategory: (newCategory) async {
+                      // Utiliser Future.microtask pour éviter setState pendant build
                       await provider.addCategory(newCategory);
-                      setState(() => _selectedCategory = newCategory);
+                      if (mounted) {
+                        Future.microtask(() {
+                          if (mounted) {
+                            setState(() => _selectedCategory = newCategory);
+                          }
+                        });
+                      }
                     },
                   );
                 },
@@ -216,7 +223,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 
-  void _submitProduct() {
+  Future<void> _submitProduct() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedCategory == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -249,8 +256,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
         images: imagesList,
       );
 
-      Provider.of<ProductProvider>(context, listen: false)
+      // Ajouter le produit de manière asynchrone
+      await Provider.of<ProductProvider>(context, listen: false)
           .addProduct(newProduct);
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -262,7 +272,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ),
       );
 
-      Navigator.pop(context);
+      // Retourner true pour indiquer qu'un produit a été ajouté
+      Navigator.pop(context, true);
     }
   }
 }

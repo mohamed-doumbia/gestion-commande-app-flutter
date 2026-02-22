@@ -107,29 +107,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Commande #${order.id}",
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            "Commande #${order.id}",
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(order.status)
-                                .withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            order.status,
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: _getStatusColor(order.status),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(order.status)
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              order.status,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: _getStatusColor(order.status),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ),

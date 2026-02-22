@@ -24,7 +24,7 @@ class _VendorOrdersScreenState extends State<VendorOrdersScreen> with SingleTick
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
       if (user != null) {
-        Provider.of<OrderProvider>(context, listen: false).loadVendorOrders(user.id!);
+        Provider.of<OrderProvider>(context, listen: false).loadVendorOrders(user.id ?? '');
       }
     });
   }
@@ -80,9 +80,9 @@ class _VendorOrdersScreenState extends State<VendorOrdersScreen> with SingleTick
                 : TabBarView(
               controller: _tabController,
               children: [
-                _buildOrderList(orderProvider.pendingOrders, user!.id!, isActionable: true),
-                _buildOrderList(orderProvider.activeOrders, user.id!, isActionable: true, isValidation: false),
-                _buildOrderList(orderProvider.historyOrders, user.id!, isActionable: false),
+                _buildOrderList(orderProvider.pendingOrders, user!.id ?? '', isActionable: true),
+                _buildOrderList(orderProvider.activeOrders, user.id ?? '', isActionable: true, isValidation: false),
+                _buildOrderList(orderProvider.historyOrders, user.id ?? '', isActionable: false),
               ],
             ),
           ),
@@ -100,7 +100,7 @@ class _VendorOrdersScreenState extends State<VendorOrdersScreen> with SingleTick
     );
   }
 
-  Widget _buildOrderList(List<OrderModel> orders, int vendorId, {bool isActionable = false, bool isValidation = true}) {
+  Widget _buildOrderList(List<OrderModel> orders, String vendorId, {bool isActionable = false, bool isValidation = true}) {
     if (orders.isEmpty) {
       return Center(child: Text("Aucune commande ici", style: GoogleFonts.poppins(color: Colors.grey)));
     }
@@ -115,7 +115,7 @@ class _VendorOrdersScreenState extends State<VendorOrdersScreen> with SingleTick
     );
   }
 
-  Widget _buildOrderCard(OrderModel order, int vendorId, bool isActionable, bool isValidation) {
+  Widget _buildOrderCard(OrderModel order, String vendorId, bool isActionable, bool isValidation) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
@@ -174,7 +174,7 @@ class _VendorOrdersScreenState extends State<VendorOrdersScreen> with SingleTick
                       if (isValidation) ...[
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => _updateStatus(order.id, "Rejetée", vendorId),
+                            onPressed: () => _updateStatus(order.id.toString(), "Rejetée", vendorId),
                             style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)),
                             child: Text("Rejeter", style: GoogleFonts.poppins()),
                           ),
@@ -182,7 +182,7 @@ class _VendorOrdersScreenState extends State<VendorOrdersScreen> with SingleTick
                         const SizedBox(width: 10),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => _updateStatus(order.id, "Validée", vendorId),
+                            onPressed: () => _updateStatus(order.id.toString(), "Validée", vendorId),
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                             child: Text("Valider", style: GoogleFonts.poppins(color: Colors.white)),
                           ),
@@ -190,7 +190,7 @@ class _VendorOrdersScreenState extends State<VendorOrdersScreen> with SingleTick
                       ] else ...[
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => _updateStatus(order.id, "Livrée", vendorId),
+                            onPressed: () => _updateStatus(order.id.toString(), "Livrée", vendorId),
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E293B)),
                             child: Text("Marquer comme Livré", style: GoogleFonts.poppins(color: Colors.white)),
                           ),
@@ -216,7 +216,7 @@ class _VendorOrdersScreenState extends State<VendorOrdersScreen> with SingleTick
     }
   }
 
-  void _updateStatus(int orderId, String status, int vendorId) {
+  void _updateStatus(String orderId, String status, String vendorId) {
     Provider.of<OrderProvider>(context, listen: false).updateStatus(orderId, status, vendorId);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Commande $status ! Notification envoyée.")));
   }

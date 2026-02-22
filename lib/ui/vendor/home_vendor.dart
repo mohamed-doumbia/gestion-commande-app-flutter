@@ -3,17 +3,36 @@ import 'package:gestion_commandes/ui/vendor/stocks/stock_management_screen.dart'
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/order_provider.dart';
 import '../auth/login_screen.dart';
 import '../branch/add_branch_screen.dart';
 import '../common/chat_screen.dart';
+import 'access_codes_screen.dart';
 import 'clients/client_list_screen.dart';
 import 'orders/vendor_orders_screen.dart';
 import 'products/product_list_screen.dart';
 import 'statistics_screen.dart';
 import 'history_screen.dart';
 
-class HomeVendor extends StatelessWidget {
+class HomeVendor extends StatefulWidget {
   const HomeVendor({super.key});
+
+  @override
+  State<HomeVendor> createState() => _HomeVendorState();
+}
+
+class _HomeVendorState extends State<HomeVendor> {
+  @override
+  void initState() {
+    super.initState();
+    // Charger les commandes au démarrage
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+      if (user != null) {
+        Provider.of<OrderProvider>(context, listen: false).loadVendorOrders(user.id ?? '');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,18 +93,12 @@ class HomeVendor extends StatelessWidget {
                 childAspectRatio: 2.5,
                 children: [
                   // 1. GESTION COMMANDES
-                  _buildDashboardCard(
-                    context,
-                    "Commandes",
-                    "En cours",
-                    Icons.shopping_cart_outlined,
-                    Colors.blue.shade50,
-                        () {
-                      Navigator.push(
+                  Consumer<OrderProvider>(
+                    builder: (context, orderProvider, child) {
+                      return _buildOrdersCard(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const VendorOrdersScreen(),
-                        ),
+                        orderProvider,
+                        user?.id ?? '',
                       );
                     },
                   ),
@@ -152,8 +165,8 @@ class HomeVendor extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const ChatScreen(
-                            otherUserId: 2,
+                          builder: (_) => ChatScreen(
+                            otherUserId: 'demo-client-id',
                             otherUserName: "Client Démo",
                           ),
                         ),
@@ -304,6 +317,131 @@ class HomeVendor extends StatelessWidget {
     );
   }
 
+  Widget _buildOrdersCard(
+    BuildContext context,
+    OrderProvider orderProvider,
+    String vendorId,
+  ) {
+    final pendingCount = orderProvider.pendingOrders.length;
+    final activeCount = orderProvider.activeOrders.length;
+    final totalOrders = orderProvider.orders.length;
+    
+    // Debug logs
+    print('📊 Commandes - Total: $totalOrders, En attente: $pendingCount, En cours: $activeCount');
+    
+    String subtitle;
+    if (pendingCount > 0 && activeCount > 0) {
+      subtitle = "$pendingCount attente • $activeCount cours";
+    } else if (pendingCount > 0) {
+      subtitle = "$pendingCount en attente";
+    } else if (activeCount > 0) {
+      subtitle = "$activeCount en cours";
+    } else {
+      subtitle = "Aucune commande";
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const VendorOrdersScreen(),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            )
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 30,
+                    color: Color(0xFF1E293B),
+                  ),
+                  if (pendingCount > 0)
+                    Positioned(
+                      right: -5,
+                      top: -5,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.orange,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Text(
+                          '$pendingCount',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Commandes",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey,
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildDrawer(BuildContext context, user) {
     return Drawer(
       child: ListView(
@@ -424,7 +562,30 @@ class HomeVendor extends StatelessWidget {
             },
           ),
 
+          ListTile(
+            leading: const Icon(Icons.vpn_key),
+            title: Text('Codes d\'accès', style: GoogleFonts.poppins()),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AccessCodesScreen(),
+                ),
+              );
+            },
+          ),
+
           const Divider(),
+
+          ListTile(
+            leading: const Icon(Icons.delete_forever, color: Colors.red),
+            title: Text(
+              "Supprimer le magasin",
+              style: GoogleFonts.poppins(color: Colors.red),
+            ),
+            onTap: () => _showDeleteAccountDialog(context),
+          ),
 
           ListTile(
             leading: const Icon(Icons.exit_to_app, color: Colors.red),
@@ -444,5 +605,149 @@ class HomeVendor extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Afficher le dialogue de confirmation de suppression
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Supprimer le magasin',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Êtes-vous sûr de vouloir supprimer votre magasin ?',
+                style: GoogleFonts.poppins(),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⚠️ Cette action va :',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• Rendre votre compte inaccessible\n'
+                      '• Empêcher toute connexion future\n'
+                      '• Conserver toutes vos données en base\n'
+                      '• Vous déconnecter immédiatement',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.red.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Cette action est irréversible. Vous devrez créer un nouveau compte pour continuer.',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Annuler',
+                style: GoogleFonts.poppins(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await _deleteAccount(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(
+                'Supprimer',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Supprimer le compte et rediriger vers la page de connexion
+  Future<void> _deleteAccount(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // Afficher un indicateur de chargement
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
+    final success = await authProvider.deleteAccount();
+
+    if (context.mounted) {
+      Navigator.pop(context); // Fermer l'indicateur de chargement
+      
+      if (success) {
+        // Rediriger vers la page de connexion
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+        
+        // Afficher un message de confirmation
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Votre magasin a été supprimé avec succès',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        // Afficher un message d'erreur
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Erreur lors de la suppression. Veuillez réessayer.',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }
