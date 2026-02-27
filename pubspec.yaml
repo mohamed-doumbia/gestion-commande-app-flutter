@@ -33,6 +33,7 @@ dependencies:
   image_picker: ^1.2.1   # <--- AJOUTÉ : Pour ouvrir la Caméra / Galerie
   mobile_scanner: ^3.5.5
   intl_phone_field: ^3.2.0
+  sqflite_common_ffi: ^2.3.0
 
   # Utils & Stats
   intl: ^0.19.0

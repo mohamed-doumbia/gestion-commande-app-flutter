@@ -8,6 +8,9 @@ class UserModel {
   final String? shopName;
   final String? city;
   final String? district;
+  final String? branchId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   UserModel({
     this.id,
@@ -19,7 +22,11 @@ class UserModel {
     this.shopName,
     this.city,
     this.district,
-  });
+    this.branchId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
     return {
@@ -32,6 +39,9 @@ class UserModel {
       'shopName': shopName,
       'city': city,
       'district': district,
+      'branchId': branchId, // ✅ CORRIGÉ : sans underscore
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
@@ -46,6 +56,48 @@ class UserModel {
       shopName: map['shopName'],
       city: map['city'],
       district: map['district'],
+      branchId: map['branchId'] as String?, // ✅ CORRIGÉ : sans underscore
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'] as String)
+          : DateTime.now(),
     );
+  }
+
+  UserModel copyWith({
+    int? id,
+    String? fullName,
+    String? phone,
+    String? email,
+    String? password,
+    String? role,
+    String? shopName,
+    String? city,
+    String? district,
+    String? branchId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      phone: phone ?? this.phone,
+      email: email ?? this.email,
+      password: password ?? this.password,
+      role: role ?? this.role,
+      shopName: shopName ?? this.shopName,
+      city: city ?? this.city,
+      district: district ?? this.district,
+      branchId: branchId ?? this.branchId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? DateTime.now(),
+    );
+  }
+
+  @override
+  String toString() {
+    return 'UserModel(id: $id, fullName: $fullName, role: $role, branchId: $branchId)';
   }
 }

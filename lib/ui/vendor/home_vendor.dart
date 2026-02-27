@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
+import '../branch/add_branch_screen.dart';
 import '../common/chat_screen.dart';
 import 'clients/client_list_screen.dart';
 import 'orders/vendor_orders_screen.dart';
@@ -172,6 +173,22 @@ class HomeVendor extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const StatisticsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _buildDashboardCard(
+                    context,
+                    "Gerer mes succursale",
+                    "Manager vos endpoints depuis la maison",
+                    Icons.bar_chart,
+                    Colors.orange.shade50,
+                        () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddBranchScreen(),
                         ),
                       );
                     },
